@@ -13,16 +13,17 @@ if int(sublime.version()) < 3000:
     try:
         import sublimerepl
     except ImportError:
-        log('SublimeREPL is not installed, ghci/repl commands disabled', log_info)
+        Logging.log('SublimeREPL is not installed, ghci/repl commands disabled', Logging.LOG_INFO)
         has_sublime_repl = False
 else:
     from SublimeHaskell.sublime_haskell_common import *
     import SublimeHaskell.autocomplete as autocomplete
+    import SublimeHaskell.internals.logging as Logging
     import SublimeHaskell.hsdev as hsdev
     try:
         import SublimeREPL.sublimerepl as sublimerepl
     except ImportError:
-        log('SublimeREPL is not installed, ghci/repl commands disabled', log_info)
+        Logging.log('SublimeREPL is not installed, ghci/repl commands disabled', Logging.LOG_INFO)
         has_sublime_repl = False
 
 

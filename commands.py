@@ -15,6 +15,7 @@ if int(sublime.version()) < 3000:
     import hsdev
 else:
     from SublimeHaskell.sublime_haskell_common import *
+    import SublimeHaskell.internals.logging as Logging
     from SublimeHaskell.internals.proc_helper import ProcHelper
     from SublimeHaskell.internals.settings import get_setting_async
     from SublimeHaskell.internals.output_collector import OutputCollector
@@ -422,7 +423,7 @@ class SublimeHaskellGoToAnyDeclaration(SublimeHaskellWindowCommand):
 class SublimeHaskellReinspectAll(hsdev.HsDevWindowCommand):
     def run(self):
         if hsdev.agent_connected():
-            log('reinspect all', log_trace)
+            Logging.log('reinspect all', Logging.LOG_TRACE)
             hsdev.agent.start_inspect()
         else:
             show_status_message("inspector not connected", is_ok = False)
@@ -592,7 +593,7 @@ class SublimeHaskellInsertImportForSymbol(hsdev.HsDevTextCommand):
     """
     Insert import for symbol
     """
-    def run(self, edit, filename = None, decl = None, module_name = None):
+    def run(self, edit, filename=None, decl=None, module_name=None):
         self.full_name = decl
         self.current_file_name = filename
         self.edit = edit
@@ -628,7 +629,7 @@ class SublimeHaskellInsertImportForSymbol(hsdev.HsDevTextCommand):
         self.module_name = module_name
         contents = self.view.substr(sublime.Region(0, self.view.size()))
         contents_part = contents[0: list(re.finditer('^import.*$', contents, re.MULTILINE))[-1].end()]
-        ProcHelper.invoke_tool(['hsinspect'], 'hsinspect', contents_part, self.on_inspected, check_enabled = False)
+        ProcHelper.invoke_tool(['hsinspect'], 'hsinspect', contents_part, self.on_inspected, check_enabled=False)
 
     def on_inspected(self, result):
         cur_module = hsdev.parse_module(json.loads(result)['module']) if self.view.is_dirty() else head_of(hsdev.client.module(file = self.current_file_name))
@@ -680,7 +681,7 @@ class SublimeHaskellClearImports(hsdev.HsDevTextCommand):
 
         cur_module = head_of(hsdev.client.module(file = self.current_file_name))
         if not cur_module:
-            log("module not scanned")
+            Logging.log("module not scanned")
             return
 
         imports = sorted(cur_module.imports, key = lambda i: i.position.line)
@@ -688,16 +689,16 @@ class SublimeHaskellClearImports(hsdev.HsDevTextCommand):
         cmd = ['hsclearimports', self.current_file_name, '--max-import-list', '32']
         exit_code, cleared, err = ProcHelper.run_process(cmd)
         if exit_code != 0:
-            log('hsclearimports error: {0}'.format(err), log_error)
+            Logging.log('hsclearimports error: {0}'.format(err), Logging.LOG_ERROR)
             return
 
         new_imports = cleared.splitlines()
 
         if len(imports) != len(new_imports):
-            log('different number of imports: {0} and {1}'.format(len(imports), len(new_imports)), log_error)
+            Logging.log('different number of imports: {0} and {1}'.format(len(imports), len(new_imports)), Logging.LOG_ERROR)
             return
 
-        log('replacing imports for {0}'.format(self.current_file_name), log_trace)
+        Logging.log('replacing imports for {0}'.format(self.current_file_name), Logging.LOG_TRACE)
         erased = 0
         for i, ni in zip(imports, new_imports):
             pt = self.view.text_point(i.position.line - 1 - erased, 0)
@@ -1042,7 +1043,7 @@ class AutoFixState(object):
 
     def set_selected(self, i):
         if i < 0 or i >= len(self.corrections):
-            log('AutoFixState.set_selected({0}): out of bound'.format(i), log_error)
+            Logging.log('AutoFixState.set_selected({0}): out of bound'.format(i), Logging.LOG_ERROR)
             return
         self.selected = i
         self.mark()
@@ -1238,10 +1239,10 @@ class SublimeHaskellStackExec(sublime_plugin.TextCommand):
     def stack_exec(self, arg):
         cmdargs = ['stack', 'exec', '--'] + shlex.split(arg)
         window = self.view.window()
-        runv = output_panel(window, panel_name = SublimeHaskellStackExec.OUTPUT_PANEL_NAME)
+        runv = output_panel(window, panel_name=SublimeHaskellStackExec.OUTPUT_PANEL_NAME)
         pretty_cmdargs = 'Running \'{0}\''.format(' '.join(cmdargs))
         runv.run_command('insert', {'characters': '{0}\n{1}\n'.format(pretty_cmdargs, '-' * len(pretty_cmdargs))})
-        
+
         sthread = SExecRunner(runv, cmdargs).start()
 
     def show_output_panel(self):

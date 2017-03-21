@@ -23,11 +23,9 @@ if int(sublime.version()) < 3000:
     from internals.proc_helper import ProcHelper
     from internals.utils import PyV3
 else:
+    import SublimeHaskell.internals.logging as Logging
     from SublimeHaskell.internals.locked_object import LockedObject
-    from SublimeHaskell.internals.settings import get_settings, get_setting, get_setting_async, on_changed_setting, \
-        sublime_haskell_settings, sublime_settings_changes
-    from SublimeHaskell.internals.proc_helper import ProcHelper
-    from SublimeHaskell.internals.utils import PyV3
+    import SublimeHaskell.internals.settings as Settings
 
 # Maximum seconds to wait for window to appear
 # This dirty hack is used in wait_for_window function
@@ -45,64 +43,6 @@ IMPORT_MODULE_RE = re.compile(r'import(\s+qualified)?\s+(?P<module>[A-Z][\w\d\']
 # SYMBOL_RE = re.compile(r'((?P<module>\w+(\.\w+)*)\.)?(?P<identifier>((\w*)|([]*)))$')
 # Get symbol module scope and its name within import statement
 IMPORT_SYMBOL_RE = re.compile(r'import(\s+qualified)?\s+(?P<module>[A-Z][\w\d\']*(\.[A-Z][\w\d\']*)*)(\s+as\s+(?P<as>[A-Z][\w\d\']*))?\s*\(.*?((?P<identifier>([a-z][\w\d\']*)?)|(\((?P<operator>[!#$%&*+\.\/<=>?@\\\^|\-~:]*)))$')
-
-
-# Logging primitives
-log_error = 1
-log_warning = 2
-log_info = 3
-log_debug = 4
-log_trace = 5
-
-
-def log(message, level = log_info):
-    log_level = get_setting_async('log', log_info)
-    if log_level >= level:
-        print(u'Sublime Haskell: {0}'.format(message))
-
-
-# Can't retrieve settings from child threads, only from the main thread.
-#
-# So we use the following hack: Initially load settings from the main thread and
-# store them in the sublime_haskell_settings dictionary and callback attached to
-# update its value. And then setting can be retrieved from any thread with
-# get_setting_async. The setting must be loaded at least once from main thread.
-#
-# Some settings are loaded only from secondary threads, so we load them here for
-# first time.
-def preload_settings():
-    def change_func(key):
-        return lambda: on_changed_setting(str(key))
-
-    for key in [ 'add_standard_dirs'
-               , 'add_to_PATH'
-               , 'enable_auto_build'
-               , 'haskell_build_tool'
-               , 'show_error_window'
-               , 'show_output_window'
-               , 'enable_ghc_mod'
-               , 'enable_hdevtools'
-               , 'enable_hdocs'
-               , 'enable_hsdev'
-               , 'hsdev_log_config'
-               , 'inspect_modules'
-               , 'snippet_replace'
-               , 'lint_check_fly'
-               , 'lint_check_fly_idle'
-               , 'ghc_opts'
-               , 'log'
-               , 'use_improved_syntax'
-               ]:
-        get_setting(key)
-        with sublime_haskell_settings as settings:
-            get_settings().add_on_change(str(key), change_func(key))
-            with sublime_settings_changes as changes:
-                changes[key] = []
-
-    # Register change detection:
-    with sublime_settings_changes as changes:
-        changes['add_to_PATH'].append(ProcHelper.update_environment)
-        changes['add_standard_dirs'].append(ProcHelper.update_environment)
 
 
 def is_enabled_haskell_command(view = None, must_be_project=True, must_be_main=False, must_be_file = False):
@@ -200,21 +140,6 @@ def get_cabal_in_dir(cabal_dir):
     return (None, None)
 
 
-def is_stack_project(project_dir):
-    """Search for stack.yaml in parent directories"""
-    return find_file_in_parent_dir(project_dir, "stack.yaml") is not None
-
-
-# Get stack dist path
-def stack_dist_path(project_dir):
-    exit_code, out, err = ProcHelper.run_process(['stack', 'path'], cwd = project_dir)
-    if exit_code == 0:
-        ds = [d for d in out.splitlines() if d.startswith('dist-dir: ')]
-        if len(ds):
-            dist_dir = ds[0][10:]
-            return os.path.join(project_dir, dist_dir)
-
-
 def find_file_in_parent_dir(subdirectory, filename_pattern):
     """Look for a file with the specified name in a parent directory of the
     specified directory. If found, return the file's full path. Otherwise,
@@ -243,13 +168,6 @@ def list_files_in_dir_recursively(base_dir):
         for filename in filenames:
             files.append(os.path.join(base_dir, dirname, filename))
     return files
-
-
-def subscribe_setting(key, fn):
-    with sublime_settings_changes as changes:
-        if key not in changes:
-            changes[key] = []
-        changes[key].append(fn)
 
 
 def ghci_package_db(cabal = None):
@@ -313,7 +231,7 @@ def get_ghc_opts(filename = None, add_package_db = True, cabal = None):
     """
     Gets ghc_opts, used in several tools, as list with extra '-package-db' option and '-i' option if filename passed
     """
-    ghc_opts = get_setting_async('ghc_opts')
+    ghc_opts = Settings.get_setting_async('ghc_opts')
     if not ghc_opts:
         ghc_opts = []
     if add_package_db:
@@ -349,7 +267,7 @@ def call_ghcmod_and_wait(arg_list, filename=None, cabal = None):
     try:
         command = ['ghc-mod'] + ghc_opts_args + arg_list
 
-        # log('running ghc-mod: {0}'.format(command))
+        # Logging.log('running ghc-mod: {0}'.format(command))
 
         # Set cwd to user directory
         # Otherwise ghc-mod will fail with 'cannot satisfy package...'
@@ -405,7 +323,7 @@ def use_unicode_operators(s, force = False):
     """
     Set unicode symbols for some standard haskell operators
     """
-    if not force and not get_setting_async('unicode_symbol_info'):
+    if not force and not Settings.get_setting_async('unicode_symbol_info'):
         return s
 
     ops = {
@@ -705,7 +623,7 @@ class StatusMessagesManager(threading.Thread):
                     self.timer.start()
                     self.timer.join()
             except Exception as e:
-                log('Exception in status message: {0}'.format(e), log_error)
+                Logging.log('Exception in status message: {0}'.format(e), Logging.LOG_ERROR)
 
     def show(self):
         # Show current message, clear event if no events
@@ -755,6 +673,7 @@ def show_status_message(msg, is_ok = None, priority = 0):
     """
     Show status message with check mark (is_ok = true), ballot x (is_ok = false)
     """
+    global status_message_manager
     status_message_manager.add(StatusMessage.status(msg, priority = priority, is_ok = is_ok))
 
 
@@ -764,6 +683,7 @@ def show_status_message_process(msg, is_ok = None, timeout = 300, priority = 0):
     There can be only one message process in time, message with highest priority is shown
     For example, when building project, there must be only message about building
     """
+    global status_message_manager
     if is_ok is not None:
         m = status_message_manager.get(msg)
         if m:
@@ -823,6 +743,7 @@ class with_status_message(object):
         self.stop()
 
     def start(self):
+        global status_message_manager
         status_message_manager.add(self.msg)
 
     def stop(self):
@@ -852,23 +773,6 @@ def status_message_process(msg, is_ok = True, timeout = 300, priority = 0):
 def sublime_haskell_cache_path():
     """Get the path where compiled tools and caches are stored"""
     return os.path.join(sublime.cache_path(), 'SublimeHaskell')
-
-
-def plugin_loaded():
-    cache_path = sublime_haskell_cache_path()
-
-    global status_message_manager
-    if not status_message_manager:
-        status_message_manager = StatusMessagesManager()
-        status_message_manager.start()
-
-    if not os.path.exists(cache_path):
-        os.makedirs(cache_path)
-
-    preload_settings()
-
-if int(sublime.version()) < 3000:
-    plugin_loaded()
 
 
 class SublimeHaskellWindowCommand(sublime_plugin.WindowCommand):

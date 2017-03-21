@@ -9,8 +9,7 @@ except ImportError:
 if int(sublime.version()) < 3000:
     from sublime_haskell_common import log, log_debug
 else:
-    from SublimeHaskell.sublime_haskell_common import log, log_debug
-
+    import SublimeHaskell.internals.logging as Logging
 
 # Background worker
 class Worker(threading.Thread):
@@ -24,7 +23,7 @@ class Worker(threading.Thread):
             try:
                 fn(*args, **kwargs)
             except Exception as e:
-                log('worker: job {0} fails with {1}'.format(name, e), log_debug)
+                Logging.log('worker: job {0} fails with {1}'.format(name, e), Logging.LOG_DEBUG)
 
     def async(self, name, fn, *args, **kwargs):
         self.jobs.put((name, fn, args, kwargs))

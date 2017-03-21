@@ -81,3 +81,10 @@ def set_setting(key, value):
 
 def set_setting_async(key, value):
     sublime.set_timeout(lambda: set_setting(key, value), 0)
+
+
+def subscribe_setting(key, fn):
+    with sublime_settings_changes as changes:
+        if key not in changes:
+            changes[key] = []
+        changes[key].append(fn)

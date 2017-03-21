@@ -3,6 +3,7 @@
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
 import errno
+import io
 import subprocess
 import os
 import os.path
@@ -16,9 +17,11 @@ if int(sublime.version()) < 3000:
     from internals.settings import get_setting_async
     from internal.utils import decode_bytes, encode_bytes
 else:
+    import SublimeHaskell.sublime_haskell_common as Common
+    import SublimeHaskell.internals.logging as Logging
     from SublimeHaskell.internals.locked_object import LockedObject
-    from SublimeHaskell.internals.settings import get_setting_async
-    from SublimeHaskell.internals.utils import decode_bytes, encode_bytes, PyV3
+    import SublimeHaskell.internals.settings as Settings
+    import SublimeHaskell.internals.utils as Utils
 
 def isWinXX():
     return platform.system() == "Windows"
@@ -63,7 +66,7 @@ class ProcHelper(object):
                                                 , **popen_kwargs
                                                )
 
-                self.process.stdin.write(encode_bytes(input_string))
+                self.process.stdin.write(Utils.encode_bytes(input_string))
             else:
                 self.process = None
                 self.process_err = "SublimeHaskell.ProcHelper: {0} was not found on PATH!".format(command[0])
@@ -116,7 +119,7 @@ class ProcHelper(object):
             exit_code = self.process.wait()
             # Ensure that we reap the file descriptors.
             self.cleanup()
-            return (exit_code, decode_bytes(stdout), decode_bytes(stderr))
+            return (exit_code, Utils.decode_bytes(stdout), Utils.decode_bytes(stderr))
         else:
             return (-1, '', self.process_err or "?? unknown error -- no process.")
 
@@ -141,11 +144,11 @@ class ProcHelper(object):
                 "/config"
 
             # Various patterns to match...
-            re_user_dirs = re.compile('^install-dirs\s+user')
-            re_global_dirs = re.compile('^install-dirs\s+global')
-            re_section = re.compile('^\w+')
-            re_prefix = re.compile('prefix:\s+(.*)$')
-            re_bindir = re.compile('bindir:\s+(.*)$')
+            re_user_dirs = re.compile(r'^install-dirs\s+user')
+            re_global_dirs = re.compile(r'^install-dirs\s+global')
+            re_section = re.compile(r'^\w+')
+            re_prefix = re.compile(r'prefix:\s+(.*)$')
+            re_bindir = re.compile(r'bindir:\s+(.*)$')
 
             # Things to collect
             user_prefix = "$HOME/.cabal" if not isWinXX() else "%APPDATA%/cabal"
@@ -192,19 +195,19 @@ class ProcHelper(object):
                 # Silently fail.
                 pass
 
-            return [ os.path.join(user_prefix, user_bindir)
-                   , os.path.join(global_prefix, global_bindir)
+            return [os.path.join(user_prefix, user_bindir)
+                    , os.path.join(global_prefix, global_bindir)
                    ]
 
         ext_env = dict(os.environ)
         PATH = os.getenv('PATH') or ""
         std_places = []
-        if get_setting_async('add_standard_dirs', True):
+        if Settings.get_setting_async('add_standard_dirs', True):
             std_places = ["$HOME/.local/bin" if not isWinXX() else "%APPDATA%/local/bin"] + cabal_config()
             std_places = list(filter(os.path.isdir, map(normalize_path, std_places)))
 
-        add_to_PATH = list(map(normalize_path, get_setting_async('add_to_PATH', [])))
-        if not PyV3:
+        add_to_PATH = list(map(normalize_path, Settings.get_setting_async('add_to_PATH', [])))
+        if not Utils.PyV3:
             # convert unicode strings to strings (for Python < 3). Environment
             # can contain only strings.
             add_to_PATH = list(map(str, add_to_PATH))
@@ -248,18 +251,18 @@ class ProcHelper(object):
         return None
 
     @staticmethod
-    def run_process(command, input_string = '', **popen_kwargs):
+    def run_process(command, input_string='', **popen_kwargs):
         """Execute a subprocess, wait for it to complete, returning a ``(exit_code, stdout, stderr)``` tuple."""
-        with ProcHelper(command, input_string, **popen_kwargs) as p:
-            return p.wait()
+        with ProcHelper(command, input_string, **popen_kwargs) as proc:
+            return proc.wait()
 
     @staticmethod
-    def invoke_tool(command, tool_name, input = '', on_result = None, filename = None, on_line = None, check_enabled = True, **popen_kwargs):
-        if check_enabled and not get_setting_async(tool_enabled(tool_name)):
+    def invoke_tool(command, tool_name, input='', on_result=None, filename=None, on_line=None, check_enabled=True, **popen_kwargs):
+        if check_enabled and not Settings.get_setting_async(Common.tool_enabled(tool_name)):
             return None
         # extended_env = get_extended_env()
 
-        source_dir = get_source_dir(filename)
+        source_dir = Common.get_source_dir(filename)
 
         def mk_result(s):
             return on_result(s) if on_result else s
@@ -271,22 +274,22 @@ class ProcHelper(object):
                     raise Exception('{0} exited with exit code {1} and stderr: {2}'.format(tool_name, exit_code, stderr))
 
                 if on_line:
-                    for l in stdout:
+                    for l in io.TextIOWrapper(stdout, encoding='utf-8'):
                         on_line(mk_result(l))
                 else:
-                    return mk_result(stdout)
+                    return mk_result(io.TextIOWrapper(stdout, encoding='utf-8'))
 
         except OSError as e:
             if e.errno == errno.ENOENT:
-                output_error_async(sublime.active_window(), "SublimeHaskell: {0} was not found!\n'{1}' is set to False".format(tool_name, tool_enabled(tool_name)))
-                set_setting_async(tool_enabled(tool_name), False)
+                Common.output_error_async(sublime.active_window(), "SublimeHaskell: {0} was not found!\n'{1}' is set to False".format(tool_name, Common.tool_enabled(tool_name)))
+                Settings.set_setting_async(Common.tool_enabled(tool_name), False)
             else:
-                log('{0} fails with {1}, command: {2}'.format(tool_name, e, command), log_error)
+                Logging.log('{0} fails with {1}, command: {2}'.format(tool_name, e, command), Logging.LOG_ERROR)
 
             return None
 
         except Exception as e:
-            log('{0} fails with {1}, command: {2}'.format(tool_name, e, command), log_error)
+            Logging.log('{0} fails with {1}, command: {2}'.format(tool_name, e, command), Logging.LOG_ERROR)
 
         return None
 

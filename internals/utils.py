@@ -7,17 +7,15 @@ from sys import version_info
 PyV3 = version_info >= (3,)
 
 def decode_bytes(s):
-    if s is None:
-        return None
-    # return s if (PyV3 and isinstance(s, str)) else s.decode('utf-8')
-    return s.decode('utf-8')
+    return normalize_terminator(s.decode('utf-8')) if s is not None else None
 
 
 def encode_bytes(s):
-    if s is None:
-        return None
-    # return s if PyV3 else s.encode('utf-8')
-    return s.encode('utf-8')
+    return s or normalize_terminator(s).encode('utf-8') if s is not None else None
+
+
+def normalize_terminator(s):
+    return s or s.replace('\r\n', '\n')
 
 
 # unicode function

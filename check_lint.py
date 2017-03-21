@@ -14,6 +14,7 @@ if int(sublime.version()) < 3000:
 else:
     from SublimeHaskell.sublime_haskell_common import *
     from SublimeHaskell.internals.settings import get_setting_async
+    import SublimeHaskell.internals.logging as Logging
     import SublimeHaskell.hsdev as hsdev
     from SublimeHaskell.parseoutput import OutputMessage, parse_output_messages, show_output_result_text, format_output_messages, mark_messages_in_views, hide_output, set_global_error_messages, write_output, parse_info
     import SublimeHaskell.symbols as symbols
@@ -63,7 +64,7 @@ class SublimeHaskellHsDevChain(SublimeHaskellTextCommand):
             self.status_msg = status_message_process(msg + ': ' + self.filename, priority = 2)
             self.status_msg.start()
             if not hsdev.agent_connected():
-                log('hsdev chain fails: hsdev not connected', log_error)
+                Logging.log('hsdev chain fails: hsdev not connected', Logging.LOG_ERROR)
                 self.status_msg.fail()
                 self.status_msg.stop()
             else:
@@ -89,7 +90,7 @@ class SublimeHaskellHsDevChain(SublimeHaskellTextCommand):
 
                 fn(modify_args(self.filename), contents = self.contents, wait = False, on_response = on_resp, on_error = on_err, **kwargs)
         except Exception as e:
-            log('hsdev chain fails with: {0}'.format(e), log_error)
+            Logging.log('hsdev chain fails with: {0}'.format(e), Logging.LOG_ERROR)
             self.status_msg.fail()
             self.status_msg.stop()
 
@@ -128,10 +129,10 @@ def ghcmod_command(cmdname):
     def wrap(fn):
         def wrapper(self, *args, **kwargs):
             if get_setting_async('enable_hsdev'):
-                log("Invoking '{0}' command via hsdev".format(cmdname), log_trace)
+                Logging.log("Invoking '{0}' command via hsdev".format(cmdname), Logging.LOG_TRACE)
                 return fn(self, *args, **kwargs)
             elif get_setting_async('enable_ghc_mod'):
-                log("Invoking '{0}' command via ghc-mod".format(cmdname), log_trace)
+                Logging.log("Invoking '{0}' command via ghc-mod".format(cmdname), Logging.LOG_TRACE)
                 self.view.window().run_command('sublime_haskell_ghc_mod_{0}'.format(cmdname))
             else:
                 show_status_message('Check/Lint: both hsdev and ghc-mod are disabled', False)
@@ -248,7 +249,7 @@ def wait_ghcmod_and_parse(view, filename, msg, cmds_with_args, alter_messages_cb
 
         if not success:
             all_cmds_outputs.append(out)
-            log(u"ghc-mod %s didn't exit with success on '%s'" % (u' '.join(cmd), filename), log_error)
+            Logging.log(u"ghc-mod %s didn't exit with success on '%s'" % (u' '.join(cmd), filename), Logging.LOG_ERROR)
 
         all_cmds_successful &= success
 

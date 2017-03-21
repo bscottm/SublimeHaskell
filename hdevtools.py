@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 
+import errno
 import re
 import sublime
 import threading
@@ -8,14 +9,13 @@ if int(sublime.version()) < 3000:
     from sublime_haskell_common import *
     from internals.proc_helper import ProcHelper
     from internals.settings import get_setting_async
-    from internals.utils import decode_bytes
     from internals.output_collector import DescriptorDrain
     from parseoutput import parse_info
 else:
     from SublimeHaskell.sublime_haskell_common import *
     from SublimeHaskell.internals.proc_helper import ProcHelper
-    from SublimeHaskell.internals.settings import get_setting_async
-    from SublimeHaskell.internals.utils import decode_bytes
+    import SublimeHaskell.internals.logging as Logging
+    import SublimeHaskell.internals.settings as Settings
     from SublimeHaskell.internals.output_collector import DescriptorDrain
     from SublimeHaskell.parseoutput import parse_info
 
@@ -31,7 +31,7 @@ def show_hdevtools_error_and_disable():
         "or adjust the 'add_to_PATH' setting for a custom location.\n"
         "'enable_hdevtools' automatically set to False in the User settings."), 0)
 
-    set_setting_async('enable_hdevtools', False)
+    Settings.set_setting_async('enable_hdevtools', False)
 
 
 def call_hdevtools_and_wait(arg_list, filename = None, cabal = None):
@@ -40,7 +40,7 @@ def call_hdevtools_and_wait(arg_list, filename = None, cabal = None):
     Shows a sublime error message if hdevtools is not available.
     """
     ghc_opts_args = get_ghc_opts_args(filename, cabal = cabal)
-    hdevtools_socket = get_setting_async('hdevtools_socket')
+    hdevtools_socket = Settings.get_setting_async('hdevtools_socket')
     source_dir = get_source_dir(filename)
 
     if hdevtools_socket:
@@ -60,15 +60,15 @@ def call_hdevtools_and_wait(arg_list, filename = None, cabal = None):
         return None
 
     except Exception as e:
-        log('calling to hdevtools fails with {0}'.format(e), log_error)
+        Logging.log('calling to hdevtools fails with {0}'.format(e), Logging.LOG_ERROR)
         return None
 
 
 def admin(cmds, wait = False, **popen_kwargs):
-    if not get_setting_async('enable_hdevtools'):
+    if not Settings.get_setting_async('enable_hdevtools'):
         return None
 
-    hdevtools_socket = get_setting_async('hdevtools_socket')
+    hdevtools_socket = Settings.get_setting_async('hdevtools_socket')
 
     if hdevtools_socket:
         cmds.append('--socket={0}'.format(hdevtools_socket))
@@ -89,11 +89,11 @@ def admin(cmds, wait = False, **popen_kwargs):
         if e.errno == errno.ENOENT:
             show_hdevtools_error_and_disable()
 
-        set_setting_async('enable_hdevtools', False)
+        Settings.set_setting_async('enable_hdevtools', False)
 
         return None
     except Exception as e:
-        log('calling to hdevtools fails with {0}'.format(e))
+        Logging.log('calling to hdevtools fails with {0}'.format(e))
         return None
 
 

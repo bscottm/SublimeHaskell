@@ -2,6 +2,7 @@ import sublime
 import sublime_plugin
 
 import faulthandler
+import io
 import threading
 import subprocess
 
@@ -32,11 +33,11 @@ class OutputCollector(object):
 
         if self.prochelp.process is not None:
             lines_lock = threading.RLock()
-            self.stdout_collector = DescriptorCollector("stdout-collector", panel, lines_lock,
+            self.stdout_collector = FileObjectCollector("stdout-collector", panel, lines_lock,
                                                         self.lines, self.prochelp.process.stdout)
             self.stdout_collector.start()
             if not tie_stderr:
-                self.stderr_collector = DescriptorCollector("stderr-collector", panel, lines_lock,
+                self.stderr_collector = FileObjectCollector("stderr-collector", panel, lines_lock,
                                                             self.lines, self.prochelp.process.stderr)
                 self.stderr_collector.start()
 
@@ -45,7 +46,7 @@ class OutputCollector(object):
 
     def wait(self):
         if self.prochelp is not None:
-            # Wait for threads to complete...
+            # Wait for process and threads to complete...
             self.exit_code = self.prochelp.process.wait()
 
             if self.stdout_collector is not None:
@@ -53,8 +54,8 @@ class OutputCollector(object):
             if self.stderr_collector is not None:
                 self.stderr_collector.join()
 
-            self.panel.run_command('insert',
-                                   {'characters': '\n\nExit code: {0}\n\n'.format(self.exit_code)})
+            exit_msg = '\n\nExit code: {0}\n\n'.format(self.exit_code) if self.exit_code != 0 else ''
+            self.panel.run_command('insert', {'characters': exit_msg})
             self.prochelp.cleanup()
         else:
             self.lines = self.prochelp.process_err
@@ -69,11 +70,11 @@ class OutputCollector(object):
 
         return (self.exit_code, ''.join(self.lines))
 
-class DescriptorCollector(threading.Thread):
+class FileObjectCollector(threading.Thread):
     """stderr file object output collector. This accumulates lines into a list and also sends
     each line to a designated output panel."""
     def __init__(self, name, panel, lines_lock, lines, fobject):
-        super(DescriptorCollector, self).__init__(name=name)
+        super(FileObjectCollector, self).__init__(name=name)
 
         self.panel = panel
         self.lines_lock = lines_lock
@@ -82,8 +83,8 @@ class DescriptorCollector(threading.Thread):
 
     def run(self):
         try:
-            for l in self.fobject:
-                l = Utils.decode_bytes(l)
+            for l in io.TextIOWrapper(self.fobject, encoding="utf-8"):
+                # l = Utils.decode_bytes(l)
                 with self.lines_lock:
                     self.lines.append(l)
                 self.panel.run_command('insert', {'characters': l})

@@ -10,14 +10,13 @@ from collections import defaultdict
 
 if int(sublime.version()) < 3000:
     from sublime_haskell_common import *
-    from internals.proc_helper import ProcHelper
     from internals.settings import get_setting_async
     from internals.utils import decode_bytes, PyV3
     from internals.output_collector import OutputCollector
     import symbols
 else:
     from SublimeHaskell.sublime_haskell_common import *
-    from SublimeHaskell.internals.proc_helper import ProcHelper
+    import SublimeHaskell.internals.logging as Logging
     from SublimeHaskell.internals.settings import get_setting_async
     from SublimeHaskell.internals.utils import decode_bytes, PyV3
     from SublimeHaskell.internals.output_collector import OutputCollector
@@ -150,6 +149,10 @@ def wait_for_chain_to_complete(view, cabal_project_dir, msg, cmds, on_done):
         exit_code, cmd_out = out.wait()
         collected_out.append(cmd_out)
 
+        # Bail if the command failed...
+        if exit_code != 0:
+            break
+
     if len(collected_out) > 0:
         # We're going to show the errors in the output panel...
         hide_panel(view.window(), panel_name=BUILD_LOG_PANEL_NAME)
@@ -250,8 +253,8 @@ def mark_messages_in_views(errors):
                 errors))
             mark_messages_in_view(errors_in_view, v)
     end_time = time.clock()
-    log('total time to mark {0} diagnostics: {1} seconds'.format(
-        len(errors), end_time - begin_time), log_debug)
+    Logging.log('total time to mark {0} diagnostics: {1} seconds'.format(
+        len(errors), end_time - begin_time), Logging.LOG_DEBUG)
 
 
 message_levels = {

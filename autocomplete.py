@@ -18,6 +18,7 @@ if int(sublime.version()) < 3000:
     from worker import run_async
 else:
     from SublimeHaskell.sublime_haskell_common import *
+    import SublimeHaskell.internals.logging as Logging
     from SublimeHaskell.internals.locked_object import LockedObject
     from SublimeHaskell.internals.settings import get_setting_async
     from SublimeHaskell.internals.utils import to_unicode
@@ -136,7 +137,7 @@ class AutoCompletion(object):
     @hsdev.use_hsdev([])
     def get_completions_async(self, file_name=None):
         def log_result(r):
-            log('completions: {0}'.format(len(r or [])), log_trace)
+            Logging.log('completions: {0}'.format(len(r or [])), Logging.LOG_TRACE)
             return r or []
         none_comps = []
         update_cabal = False
@@ -160,7 +161,7 @@ class AutoCompletion(object):
         if file_name is None:
             return log_result(none_comps)
         else:
-            log('preparing completions for {0}'.format(file_name), log_debug)
+            Logging.log('preparing completions for {0}'.format(file_name), Logging.LOG_DEBUG)
             current_module = head_of(hsdev.client_back.module(file=file_name))
             if current_module:
                 comps = make_completions(
@@ -183,7 +184,7 @@ class AutoCompletion(object):
             return log_result(cache_.files[file_name])
 
     def drop_completions_async(self, file_name=None):
-        log('drop prepared completions')
+        Logging.log('drop prepared completions')
         with self.cache as cache_:
             if file_name is None:
                 cache_.files.clear()
@@ -431,7 +432,7 @@ class SublimeHaskellAutocomplete(sublime_plugin.EventListener):
             completions = autocompletion.get_completions(view, prefix, locations)
 
         end_time = time.clock()
-        log('time to get completions: {0} seconds'.format(end_time - begin_time), log_debug)
+        Logging.log('time to get completions: {0} seconds'.format(end_time - begin_time), Logging.LOG_DEBUG)
 
         # Don't put completions with special characters (?, !, ==, etc.)
         # into completion because that wipes all default Sublime completions:
@@ -494,9 +495,9 @@ class SublimeHaskellAutocomplete(sublime_plugin.EventListener):
                     self.project_file_name = window.project_file_name()
                 if window.project_file_name() is not None and window.project_file_name() != self.project_file_name:
                     self.project_file_name = window.project_file_name()
-                    log('project switched to {0}, reinspecting'.format(self.project_file_name))
+                    Logging.log('project switched to {0}, reinspecting'.format(self.project_file_name))
                     if hsdev.agent_connected():
-                        log('reinspect all', log_trace)
+                        Logging.log('reinspect all', Logging.LOG_TRACE)
                         hsdev.client.remove_all()
                         hsdev.agent.start_inspect()
                         hsdev.agent.force_inspect()
