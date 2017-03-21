@@ -9,13 +9,15 @@ PyV3 = version_info >= (3,)
 def decode_bytes(s):
     if s is None:
         return None
-    return s if (PyV3 and isinstance(s, str)) else s.decode('utf-8')
+    # return s if (PyV3 and isinstance(s, str)) else s.decode('utf-8')
+    return s.decode('utf-8')
 
 
 def encode_bytes(s):
     if s is None:
         return None
-    return s if PyV3 else s.encode('utf-8')
+    # return s if PyV3 else s.encode('utf-8')
+    return s.encode('utf-8')
 
 
 # unicode function

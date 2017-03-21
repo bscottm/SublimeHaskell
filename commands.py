@@ -1223,6 +1223,14 @@ class SublimeHaskellStackExec(sublime_plugin.TextCommand):
 
     OUTPUT_PANEL_NAME = 'haskell_run_output'
 
+    class SExecRunner(threading.Thread):
+        def __init__(self, panel, cmdargs):
+            super(SExecRunner, self).__init__()
+            self.sexec_proc = OutputCollector(panel, cmdargs)
+
+        def run(self):
+            self.sexec_proc.wait()
+
     def run(self, edit):
         win = self.view.window()
         win.show_input_panel('stack exec --', '', self.stack_exec, None, None)
@@ -1233,7 +1241,8 @@ class SublimeHaskellStackExec(sublime_plugin.TextCommand):
         runv = output_panel(window, panel_name = SublimeHaskellStackExec.OUTPUT_PANEL_NAME)
         pretty_cmdargs = 'Running \'{0}\''.format(' '.join(cmdargs))
         runv.run_command('insert', {'characters': '{0}\n{1}\n'.format(pretty_cmdargs, '-' * len(pretty_cmdargs))})
-        OutputCollector(runv, cmdargs).start()
+        
+        sthread = SExecRunner(runv, cmdargs).start()
 
     def show_output_panel(self):
         return output_view

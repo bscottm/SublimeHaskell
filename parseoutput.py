@@ -140,24 +140,23 @@ def wait_for_chain_to_complete(view, cabal_project_dir, msg, cmds, on_done):
 
     # run and wait commands, fail on first fail
     # stdout = ''
-    stderr = ''
-    output_log = output_panel(view.window(), '', panel_name = BUILD_LOG_PANEL_NAME, show_panel = get_setting_async('show_output_window'))
+    collected_out = []
+    output_log = output_panel(view.window(), '', panel_name=BUILD_LOG_PANEL_NAME, show_panel=get_setting_async('show_output_window'))
     for cmd in cmds:
         output_text(output_log, ' '.join(cmd) + '...\n')
 
         # Don't tie stderr to stdout, since we're interested in the error messages
-        oc = OutputCollector(output_log, cmd, cwd = cabal_project_dir, tie_stderr = False)
-        oc.start()
-        exit_code, stderr = oc.wait()
+        out = OutputCollector(output_log, cmd, cwd=cabal_project_dir)
+        exit_code, cmd_out = out.wait()
+        collected_out.append(cmd_out)
 
-    if len(stderr) > 0:
+    if len(collected_out) > 0:
         # We're going to show the errors in the output panel...
-        hide_panel(view.window(), panel_name = BUILD_LOG_PANEL_NAME)
+        hide_panel(view.window(), panel_name=BUILD_LOG_PANEL_NAME)
 
     # Notify UI thread that commands are done
     sublime.set_timeout(on_done, 0)
-
-    parse_output_messages_and_show(view, msg, cabal_project_dir, exit_code, stderr)
+    parse_output_messages_and_show(view, msg, cabal_project_dir, exit_code, ''.join(collected_out))
 
 
 def format_output_messages(messages):
@@ -227,13 +226,12 @@ def parse_output_messages_and_show(view, msg, base_dir, exit_code, stderr):
 
     if parsed_messages:
         outputs += [format_output_messages(parsed_messages)]
+        if unparsable:
+            outputs += ['', '']
     if unparsable:
-        outputs += ["Collected error output and messages:\n", unparsable]
+        outputs += ["Collected output:\n", unparsable]
 
-    output_text = '\n'.join(outputs)
-
-    show_output_result_text(view, msg, output_text, exit_code, base_dir)
-
+    show_output_result_text(view, msg, '\n'.join(outputs), exit_code, base_dir)
     sublime.set_timeout(lambda: mark_messages_in_views(parsed_messages), 0)
 
 

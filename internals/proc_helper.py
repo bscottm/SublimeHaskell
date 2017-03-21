@@ -2,12 +2,14 @@
 # ProcHelper: Process execution helper class.
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-import sublime
+import errno
 import subprocess
 import os
 import os.path
 import re
 import platform
+
+import sublime
 
 if int(sublime.version()) < 3000:
     from internals.locked_object import LockedObject
@@ -31,7 +33,7 @@ class ProcHelper(object):
     # to augment the user's PATH used to search for executables and tools:
     augmented_env = None
 
-    def __init__(self, command, input_string = '', **popen_kwargs):
+    def __init__(self, command, input_string='', **popen_kwargs):
         """Open a pipe to a command or tool."""
 
         if ProcHelper.augmented_env is None:
@@ -40,7 +42,7 @@ class ProcHelper(object):
         self.process = None
         self.process_err = None
 
-        if subprocess.mswindows:
+        if isWinXX():
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             popen_kwargs['startupinfo'] = startupinfo
@@ -56,10 +58,9 @@ class ProcHelper(object):
             normcmd = ProcHelper.which(command, ProcHelper.augmented_env['PATH'])
             if normcmd is not None:
                 self.process = subprocess.Popen(normcmd
-                                               , stdin=subprocess.PIPE
-                                               , env=ProcHelper.augmented_env
-                                               , universal_newlines=True
-                                               , **popen_kwargs
+                                                , stdin=subprocess.PIPE
+                                                , env=ProcHelper.augmented_env
+                                                , **popen_kwargs
                                                )
 
                 self.process.stdin.write(encode_bytes(input_string))
@@ -67,35 +68,35 @@ class ProcHelper(object):
                 self.process = None
                 self.process_err = "SublimeHaskell.ProcHelper: {0} was not found on PATH!".format(command[0])
 
-        except OSError as e:
+        except OSError as os_exc:
             self.process_err = \
-                '\n'.join([ "SublimeHaskell: Problem executing '{0}'".format(' '.join(command))
-                          , 'Operating system error: {0}'.format(e)
+                '\n'.join(["SublimeHaskell: Problem executing '{0}'".format(' '.join(command))
+                           , 'Operating system error: {0}'.format(os_exc)
                           ])
 
-            if e.errno == errno.EPIPE:
+            if os_exc.errno == errno.EPIPE:
                 # Most likely reason: subprocess output a usage message
                 stdout, stderr = self.process.communicate()
                 exit_code = self.process.wait()
                 self.process_err = self.process_err + \
-                    '\n'.join([ ''
-                              , 'Process exit code: {0}'.format(exit_code)
-                              , ''
-                              , "output:"
-                              , stdout if stdout and len(stdout) > 0 else "--no output--"
-                              , ''
-                              , 'error:'
-                              , stderr if stderr and len(stderr) > 0 else "--no error output--"])
+                    '\n'.join([''
+                               , 'Process exit code: {0}'.format(exit_code)
+                               , ''
+                               , "output:"
+                               , stdout if stdout and len(stdout) > 0 else "--no output--"
+                               , ''
+                               , 'error:'
+                               , stderr if stderr and len(stderr) > 0 else "--no error output--"])
                 self.process = None
             else:
                 self.process = None
-                raise e
+                raise os_exc
 
     # 'with' statement support:
     def __enter__(self):
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, _type, _value, _traceback):
         self.cleanup()
         return False
 
@@ -108,8 +109,8 @@ class ProcHelper(object):
                 self.process.stderr.close()
 
     def wait(self):
-        """Wait for subprocess to complete and exit, collect and decode ``stdout`` and ``stderr``, returning the tuple
-        ``(exit_code, stdout, stderr)```"""
+        """Wait for subprocess to complete and exit, collect and decode ``stdout`` and ``stderr``,
+        returning the tuple ``(exit_code, stdout, stderr)```"""
         if self.process is not None:
             stdout, stderr = self.process.communicate()
             exit_code = self.process.wait()
@@ -121,10 +122,10 @@ class ProcHelper(object):
 
     # Update the augmented environment when `add_to_PATH` or `add_standard_dirs` change.
     @staticmethod
-    def update_environment(key, val):
+    def update_environment(_key, _val):
         # Reinitialize the tool -> path cache:
-        with ProcHelper.which_cache as c:
-            c = { }
+        with ProcHelper.which_cache as cache:
+            cache = {}
         ProcHelper.augmented_env = ProcHelper.get_extended_env()
 
     # Generate the augmented environment for subprocesses. This copies the
