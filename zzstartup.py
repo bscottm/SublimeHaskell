@@ -3,9 +3,14 @@ import os
 
 import sublime
 
-import SublimeHaskell.sublime_haskell_common as Common
-import SublimeHaskell.internals.settings as Settings
-import SublimeHaskell.internals.proc_helper as ProcHelper
+if int(sublime.version()) < 3000:
+    import sublime_haskell_common as Common
+    import internals.settings as Settings
+    import internals.proc_helper as ProcHelper
+else:
+    import SublimeHaskell.sublime_haskell_common as Common
+    import SublimeHaskell.internals.settings as Settings
+    import SublimeHaskell.internals.proc_helper as ProcHelper
 
 # Can't retrieve settings from child threads, only from the main thread.
 #

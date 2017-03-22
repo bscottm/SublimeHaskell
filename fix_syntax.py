@@ -7,13 +7,14 @@
 # SublimeHaskell/Syntaxes/Haskell-SublimeHaskell.tmLanguage instead.
 #
 # Forked from https://gist.github.com/2940866.
+
 import os
 
 import sublime
 import sublime_plugin
 
 if int(sublime.version()) < 3000:
-    from internals.settings import get_setting_async
+    import internals.settings as Settings
 else:
     import SublimeHaskell.internals.settings as Settings
 

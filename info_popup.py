@@ -5,13 +5,14 @@ import webbrowser
 from xml.etree import ElementTree
 
 if int(sublime.version()) < 3000:
-    from sublime_haskell_common import *
+    import sublime_haskell_common as Common
+    import internals.utils as Utils
     import symbols
     import hsdev
     import parseoutput
     import types
 else:
-    from SublimeHaskell.sublime_haskell_common import *
+    import SublimeHaskell.sublime_haskell_common as Common
     import SublimeHaskell.internals.utils as Utils
     import SublimeHaskell.symbols as symbols
     import SublimeHaskell.hsdev as hsdev
@@ -105,7 +106,7 @@ styles = Styles()
 
 class SublimeHaskellPopup(sublime_plugin.EventListener):
     def on_hover(self, view, point, hover_zone):
-        if not is_haskell_source(view):
+        if not Common.is_haskell_source(view):
             return
 
         self.view = view
@@ -115,7 +116,7 @@ class SublimeHaskellPopup(sublime_plugin.EventListener):
         self.typed_expr = None
 
         if hover_zone == sublime.HOVER_TEXT:
-            qsymbol = get_qualified_symbol_at_point(self.view, point)
+            qsymbol = Common.get_qualified_symbol_at_point(self.view, point)
             module_word = qsymbol.module
             ident = qsymbol.name
 
@@ -151,7 +152,7 @@ class SublimeHaskellPopup(sublime_plugin.EventListener):
             if errs:
                 popup_parts = [styles.gen_style(self.view.settings().get('color_scheme'))]
                 for err in errs:
-                    msg = use_unicode_operators(symbols.escape_text(err.message))
+                    msg = Common.use_unicode_operators(symbols.escape_text(err.message))
                     # Decorate first word with style
                     decors = {
                         'Error': 'error',
@@ -172,7 +173,7 @@ class SublimeHaskellPopup(sublime_plugin.EventListener):
             if self.typed_expr:
                 popup_parts.append(u'<p><span class="function">{0}</span>{1}</p>'.format(
                     self.typed_expr.substr(self.view),
-                    symbols.format_type(use_unicode_operators(u' :: {0}'.format(self.typed_expr.typename)))))
+                    symbols.format_type(Common.use_unicode_operators(u' :: {0}'.format(self.typed_expr.typename)))))
             if self.decl:
                 popup_parts.append(self.decl.popup([u'<a href="import:{0}">Add import</a>'.format(html.escape(self.decl.name))] if self.suggest_import else []))
             popup_text = u''.join(popup_parts)

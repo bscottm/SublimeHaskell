@@ -6,18 +6,19 @@ import sublime
 import threading
 
 if int(sublime.version()) < 3000:
-    from sublime_haskell_common import *
-    from internals.proc_helper import ProcHelper
-    from internals.settings import get_setting_async
+    import internals.proc_helper as ProcHelper
+    import internals.logging as Logging
+    import internals.settings as Settings
     from internals.output_collector import DescriptorDrain
     from parseoutput import parse_info
+    import ghci_backend as GHCIMod
 else:
-    from SublimeHaskell.sublime_haskell_common import *
     import SublimeHaskell.internals.proc_helper as ProcHelper
     import SublimeHaskell.internals.logging as Logging
     import SublimeHaskell.internals.settings as Settings
     from SublimeHaskell.internals.output_collector import DescriptorDrain
     from SublimeHaskell.parseoutput import parse_info
+    import SublimeHaskell.ghci_backend as GHCIMod
 
 
 def show_hdevtools_error_and_disable():
@@ -34,27 +35,27 @@ def show_hdevtools_error_and_disable():
     Settings.set_setting_async('enable_hdevtools', False)
 
 
-def call_hdevtools_and_wait(arg_list, filename = None, cabal = None):
+def call_hdevtools_and_wait(arg_list, filename=None, cabal=None):
     """
     Calls hdevtools with the given arguments.
     Shows a sublime error message if hdevtools is not available.
     """
-    ghc_opts_args = get_ghc_opts_args(filename, cabal = cabal)
+    ghc_opts_args = GHCIMod.get_ghc_opts_args(filename, cabal=cabal)
     hdevtools_socket = Settings.get_setting_async('hdevtools_socket')
-    source_dir = get_source_dir(filename)
+    source_dir = ProcHelper.get_source_dir(filename)
 
     if hdevtools_socket:
         arg_list.append('--socket={0}'.format(hdevtools_socket))
 
     try:
-        exit_code, out, err = ProcHelper.ProcHelper.run_process(['hdevtools'] + arg_list + ghc_opts_args, cwd = source_dir)
+        exit_code, out, err = ProcHelper.ProcHelper.run_process(['hdevtools'] + arg_list + ghc_opts_args, cwd=source_dir)
         if exit_code != 0:
             show_hdevtools_error_and_disable()
             raise Exception("hdevtools exited with status %d and stderr: %s" % (exit_code, err))
         return out
 
-    except OSError as e:
-        if e.errno == errno.ENOENT:
+    except OSError as os_exc:
+        if os_exc.errno == errno.ENOENT:
             show_hdevtools_error_and_disable()
 
         return None
@@ -64,7 +65,7 @@ def call_hdevtools_and_wait(arg_list, filename = None, cabal = None):
         return None
 
 
-def admin(cmds, wait = False, **popen_kwargs):
+def admin(cmds, wait=False, **popen_kwargs):
     if not Settings.get_setting_async('enable_hdevtools'):
         return None
 
@@ -81,28 +82,25 @@ def admin(cmds, wait = False, **popen_kwargs):
             return stdout if exit_code == 0 else 'error running {0}: {1}'.format(command, stderr)
         else:
             p = ProcHelper.ProcHelper(command, '', **popen_kwargs)
-            DescriptorDrain('hdevtools stdout', p.stdout).start()
-            DescriptorDrain('hdevtools stderr', p.stderr).start()
+            DescriptorDrain('hdevtools stdout', p.process.stdout).start()
+            DescriptorDrain('hdevtools stderr', p.process.stderr).start()
             return ''
 
-    except OSError as e:
-        if e.errno == errno.ENOENT:
+    except OSError as os_exc:
+        if os_exc.errno == errno.ENOENT:
             show_hdevtools_error_and_disable()
 
         Settings.set_setting_async('enable_hdevtools', False)
 
         return None
-    except Exception as e:
-        Logging.log('calling to hdevtools fails with {0}'.format(e))
+    except Exception as exc:
+        Logging.log('calling to hdevtools fails with {0}'.format(exc))
         return None
 
 
 def is_running():
-    r = admin(['--status'], wait = True)
-    if r and re.search(r'running', r):
-        return True
-    else:
-        return False
+    hdevtool = admin(['--status'], wait=True)
+    return hdevtool and re.search(r'running', hdevtool)
 
 
 def start_server():
@@ -110,7 +108,7 @@ def start_server():
         admin(["--start-server"])
 
 
-def hdevtools_info(filename, symbol_name, cabal = None):
+def hdevtools_info(filename, symbol_name, cabal=None):
     """
     Uses hdevtools info filename symbol_name to get symbol info
     """

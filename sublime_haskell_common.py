@@ -17,16 +17,16 @@ import time
 from sys import stdout, stderr
 
 if int(sublime.version()) < 3000:
-    from internals.locked_object import LockedObject
-    from internals.settings import get_settings, get_setting, get_setting_async, on_changed_setting, sublime_haskell_settings, \
-        sublime_settings_changes
-    from internals.proc_helper import ProcHelper
-    from internals.utils import PyV3
+    # from internals.locked_object import LockedObject
+    # from internals.settings import get_settings, get_setting, get_setting_async, on_changed_setting, sublime_haskell_settings, \
+    #     sublime_settings_changes
+    # from internals.proc_helper import ProcHelper
+    # from internals.utils import PyV3
+    pass
 else:
     import SublimeHaskell.internals.logging as Logging
     import SublimeHaskell.internals.locked_object as LockedObject
     import SublimeHaskell.internals.settings as Settings
-    import SublimeHaskell.internals.proc_helper as ProcHelper
 
 # Maximum seconds to wait for window to appear
 # This dirty hack is used in wait_for_window function
@@ -161,135 +161,12 @@ def list_files_in_dir_recursively(base_dir):
     return files
 
 
-def ghci_package_db(cabal = None):
-    if not cabal or cabal == 'cabal':
-        return None
-    package_conf = (filter(lambda x: re.match('packages-(.*)\.conf', x), os.listdir(cabal)) + [None])[0]
-    if package_conf:
-        return os.path.join(cabal, package_conf)
-    return None
-
-
-def get_source_dir(filename):
-    """
-    Get root of hs-source-dirs for filename in project
-    """
-    if not filename:
-        return os.path.expanduser('~')
-        # return os.getcwd()
-
-    (cabal_dir, project_name) = get_cabal_project_dir_and_name_of_file(filename)
-    if not cabal_dir:
-        return os.path.dirname(filename)
-
-    _project_name, cabal_file = get_cabal_in_dir(cabal_dir)
-    exit_code, out, err = ProcHelper.ProcHelper.run_process(['hsinspect', cabal_file])
-
-    if exit_code == 0:
-        info = json.loads(out)
-
-        dirs = ["."]
-
-        if 'error' not in info and 'description' in info:
-            # collect all hs-source-dirs
-            descr = info['description']
-            if descr['library']:
-                dirs.extend(descr['library']['info']['source-dirs'])
-            for i in descr['executables']:
-                dirs.extend(i['info']['source-dirs'])
-            for t in descr['tests']:
-                dirs.extend(t['info']['source-dirs'])
-
-        paths = [os.path.abspath(os.path.join(cabal_dir, d)) for d in dirs]
-        paths.sort(key = lambda p: -len(p))
-
-        for p in paths:
-            if filename.startswith(p):
-                return p
-
-    return os.path.dirname(filename)
-
-
-def get_cwd(filename = None):
+def get_cwd(filename=None):
     """
     Get cwd for filename: cabal project path, file path or os.getcwd()
     """
     cwd = (get_cabal_project_dir_of_file(filename) or os.path.dirname(filename)) if filename else os.getcwd()
     return cwd
-
-
-def get_ghc_opts(filename = None, add_package_db = True, cabal = None):
-    """
-    Gets ghc_opts, used in several tools, as list with extra '-package-db' option and '-i' option if filename passed
-    """
-    ghc_opts = Settings.get_setting_async('ghc_opts')
-    if not ghc_opts:
-        ghc_opts = []
-    if add_package_db:
-        package_db = ghci_package_db(cabal = cabal)
-        if package_db:
-            ghc_opts.append('-package-db {0}'.format(package_db))
-
-    if filename:
-        ghc_opts.append('-i {0}'.format(get_source_dir(filename)))
-
-    return ghc_opts
-
-
-def get_ghc_opts_args(filename = None, add_package_db = True, cabal = None):
-    """
-    Same as ghc_opts, but uses '-g' option for each option
-    """
-    opts = get_ghc_opts(filename, add_package_db, cabal)
-    args = []
-    for opt in opts:
-        args.extend(["-g", "\"" + opt + "\""])
-    return args
-
-
-def call_ghcmod_and_wait(arg_list, filename=None, cabal = None):
-    """
-    Calls ghc-mod with the given arguments.
-    Shows a sublime error message if ghc-mod is not available.
-    """
-
-    ghc_opts_args = get_ghc_opts_args(filename, add_package_db = False, cabal = cabal)
-
-    try:
-        command = ['ghc-mod'] + ghc_opts_args + arg_list
-
-        # Logging.log('running ghc-mod: {0}'.format(command))
-
-        # Set cwd to user directory
-        # Otherwise ghc-mod will fail with 'cannot satisfy package...'
-        # Seems, that user directory works well
-        # Current source directory is set with -i argument in get_ghc_opts_args
-        #
-        # When cabal project is available current directory is set to the project root
-        # to avoid troubles with possible template haskell openFile calls
-        ghc_mod_current_dir = get_source_dir(filename)
-        if filename:
-            cabal_project_dir = get_cabal_project_dir_of_file(filename)
-            if cabal_project_dir:
-                ghc_mod_current_dir = cabal_project_dir
-        exit_code, out, err = ProcHelper.ProcHelper.run_process(command, cwd=ghc_mod_current_dir)
-
-        if exit_code != 0:
-            raise Exception("%s exited with status %d and stderr: %s" % (' '.join(command), exit_code, err))
-
-        # return crlf2lf(out)
-        return out
-
-    except OSError as e:
-        if e.errno == errno.ENOENT:
-            output_error_async(
-                sublime.active_window(),
-                "SublimeHaskell: ghc-mod was not found!\n"
-                "It is used for LANGUAGE and import autocompletions and type inference.\n"
-                "Try adjusting the 'add_to_PATH' setting.\n"
-                "You can also turn this off using the 'enable_ghc_mod' setting.")
-        # Re-raise so that calling code doesn't try to work on the `None` return value
-        raise e
 
 
 def wait_for_window_callback(on_appear, seconds_to_wait):

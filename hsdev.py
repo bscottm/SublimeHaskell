@@ -5,23 +5,24 @@ import sublime
 import threading
 import json
 import time
+import os
 import re
 import sys
 from functools import reduce
 
 if int(sublime.version()) < 3000:
-    # import symbols
-    # from sublime_haskell_common import *
-    # from internals.proc_helper import ProcHelper
-    # from internals.locked_object import LockedObject
-    # from internals.settings import get_setting_async
-    # from internals.utils import decode_bytes, PyV3
-    # from internals.output_collector import DescriptorDrain
-    # from worker import run_async
-    pass
+    import symbols
+    import sublime_haskell_common as Common
+    import internals.logging as Logging
+    import internals.locked_object as LockedObject
+    import internals.proc_helper as ProcHelper
+    import internals.settings as Settings
+    from internals.utils import decode_bytes, PyV3
+    from internals.output_collector import DescriptorDrain
+    from worker import run_async
 else:
     import SublimeHaskell.symbols as symbols
-    from SublimeHaskell.sublime_haskell_common import *
+    import SublimeHaskell.sublime_haskell_common as Common
     import SublimeHaskell.internals.logging as Logging
     import SublimeHaskell.internals.locked_object as LockedObject
     import SublimeHaskell.internals.proc_helper as ProcHelper
@@ -71,7 +72,6 @@ def flatten_opts(opts):
 def hsdev_version():
     try:
         exit_code, out, err = ProcHelper.ProcHelper.run_process(['hsdev', 'version'])
-        print("out = {0}".format(out))
         if exit_code == 0:
             m = re.match(r'(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)\.(?P<build>\d+)', out)
             if m:
@@ -243,7 +243,6 @@ def parse_module_id(d):
 def parse_declaration(decl):
     try:
         what = decl['decl']['what']
-        # docs = crlf2lf(decl.get('docs'))
         docs = decl.get('docs')
         name = decl['name']
         pos = parse_position(decl.get('pos'))
@@ -430,7 +429,7 @@ def connect_function(fn):
     return wrapped
 
 
-def hsdev_command(async = False, timeout = None, is_list = False):
+def hsdev_command(async = False, timeout=None, is_list=False):
     def wrap_function(fn):
         def wrapped(self, *args, **kwargs):
             wait_flag = kwargs.pop('wait', not async)
@@ -798,16 +797,15 @@ class HsDev(object):
     # Commands
 
     @command
-    def link(self, hold = False, **kwargs):
-        return cmd('link', {
-            'hold': hold})
+    def link(self, hold=False, **kwargs):
+        return cmd('link', {'hold': hold})
 
     @command
     def ping(self):
         return cmd('ping', {}, lambda r: r and ('message' in r) and (r['message'] == 'pong'))
 
     @async_command
-    def scan(self, cabal = False, sandboxes = [], projects = [], files = [], paths = [], ghc = [], contents = {}, docs = False, infer = False):
+    def scan(self, cabal=False, sandboxes=[], projects = [], files = [], paths = [], ghc = [], contents = {}, docs = False, infer=False):
         return cmd('scan', {
             'projects': projects,
             'cabal': cabal,
@@ -1185,10 +1183,9 @@ class HsDevAgent(threading.Thread):
         self.cabal_to_load = LockedObject.LockedObject([])
         self.dirty_files = LockedObject.LockedObject([])
         self.dirty_paths = LockedObject.LockedObject([])
-        self.hsdev_process = HsDevProcess(
-            cache = os.path.join(sublime_haskell_cache_path(), 'hsdev'),
-            log_file = os.path.join(sublime_haskell_cache_path(), 'hsdev', 'hsdev.log'),
-            log_config = Settings.get_setting_async('hsdev_log_config'))
+        self.hsdev_process = HsDevProcess(cache=os.path.join(Common.sublime_haskell_cache_path(), 'hsdev'),
+                                          log_file=os.path.join(Common.sublime_haskell_cache_path(), 'hsdev', 'hsdev.log'),
+                                          log_config=Settings.get_setting_async('hsdev_log_config'))
         self.client = HsDev()
         self.client_back = HsDev()
 
@@ -1197,10 +1194,10 @@ class HsDevAgent(threading.Thread):
     def is_connected(self):
         return self.client.is_connected()
 
-    def start_hsdev(self, start_server = True):
+    def start_hsdev(self, start_server=True):
         hsdev_ver = hsdev_version()
         if hsdev_ver is None:
-            output_error_async(sublime.active_window(), "\n".join([
+            Common.output_error_async(sublime.active_window(), "\n".join([
                 "SublimeHaskell: hsdev executable couldn't be found!",
                 "It's used in most features of SublimeHaskell",
                 "Check if it's installed and in PATH",
@@ -1209,7 +1206,7 @@ class HsDevAgent(threading.Thread):
                 "",
                 "To supress this message and disable hsdev set 'enable_hsdev' to false"]))
         elif not check_version(hsdev_ver, HsDevAgent.min_ver, HsDevAgent.max_ver):
-            output_error_async(sublime.active_window(), "\n".join([
+            Common.output_error_async(sublime.active_window(), "\n".join([
                 "SublimeHaskell: hsdev version is incorrect: {0}".format(show_version(hsdev_ver)),
                 "Required version: >= {0} and < {1}".format(show_version(HsDevAgent.min_ver), show_version(HsDevAgent.max_ver)),
                 "Update it by running 'cabal update' and 'cabal install hsdev'",
@@ -1291,7 +1288,7 @@ class HsDevAgent(threading.Thread):
                 projects = []
                 files = []
                 for f in files_to_reinspect:
-                    d = get_cabal_project_dir_of_file(f)
+                    d = Common.get_cabal_project_dir_of_file(f)
                     if d is not None:
                         projects.append(d)
                     else:
@@ -1351,10 +1348,14 @@ class HsDevAgent(threading.Thread):
             cabal_to_load.append(cabal_name or 'cabal')
 
     @use_hsdev()
-    def inspect_cabal(self, cabal = None):
+    def inspect_cabal(self, cabal=None):
         try:
-            with status_message_process('Inspecting {0}'.format(cabal or 'cabal'), priority = 1) as s:
-                self.client_back.scan(cabal = (cabal == 'cabal'), sandboxes = [] if cabal == 'cabal' else [cabal], on_notify = scan_status(s), wait = True, docs = Settings.get_setting_async('enable_hdocs'))
+            with Common.status_message_process('Inspecting {0}'.format(cabal or 'cabal'), priority=1) as s:
+                self.client_back.scan(cabal=(cabal == 'cabal'),
+                                      sandboxes=[] if cabal == 'cabal' else [cabal],
+                                      on_notify=scan_status(s),
+                                      wait=True,
+                                      docs=Settings.get_setting_async('enable_hdocs'))
         except Exception as e:
             Logging.log('loading standard modules info for {0} failed with {1}'.format(cabal or 'cabal', e), Logging.LOG_ERROR)
 
@@ -1363,7 +1364,7 @@ class HsDevAgent(threading.Thread):
     def inspect(self, paths, projects, files):
         if paths or projects or files:
             try:
-                with status_message_process('Inspecting', priority = 1) as s:
+                with Common.status_message_process('Inspecting', priority=1) as s:
                     self.client_back.scan(paths = paths, projects = projects, files = files, on_notify = scan_status(s), wait = True, ghc = Settings.get_setting_async('ghc_opts'), docs = Settings.get_setting_async('enable_hdocs'))
             except Exception as e:
                 Logging.log('Inspection failed: {0}'.format(e), Logging.LOG_ERROR)
@@ -1372,7 +1373,7 @@ class HsDevAgent(threading.Thread):
     @use_inspect_modules
     def inspect_path(self, path):
         try:
-            with status_message_process('Inspecting path {0}'.format(path), priority = 1) as s:
+            with Common.status_message_process('Inspecting path {0}'.format(path), priority = 1) as s:
                 self.client_back.scan(paths = [path], on_notify = scan_status(s), wait = True, ghc = Settings.get_setting_async('ghc_opts'), docs = Settings.get_setting_async('enable_hdocs'))
         except Exception as e:
             Logging.log('Inspecting path {0} failed: {1}'.format(path, e), Logging.LOG_ERROR)
@@ -1380,10 +1381,10 @@ class HsDevAgent(threading.Thread):
     @use_hsdev()
     @use_inspect_modules
     def inspect_project(self, cabal_dir):
-        (project_name, cabal_file) = get_cabal_in_dir(cabal_dir)
+        (project_name, cabal_file) = Common.get_cabal_in_dir(cabal_dir)
 
         try:
-            with status_message_process('Inspecting project {0}'.format(project_name), priority = 1) as s:
+            with Common.status_message_process('Inspecting project {0}'.format(project_name), priority = 1) as s:
                 self.client_back.scan(projects = [cabal_dir], on_notify = scan_status(s), wait = True, docs = Settings.get_setting_async('enable_hdocs'))
         except Exception as e:
             Logging.log('Inspecting project {0} failed: {1}'.format(cabal_dir, e), Logging.LOG_ERROR)
@@ -1392,26 +1393,26 @@ class HsDevAgent(threading.Thread):
     @use_inspect_modules
     def inspect_files(self, filenames):
         try:
-            with status_message_process('Inspecting files', priority = 1) as s:
+            with Common.status_message_process('Inspecting files', priority = 1) as s:
                 self.client_back.scan(files = filenames, on_notify = scan_status(s), wait = True, ghc = Settings.get_setting_async('ghc_opts'), docs = Settings.get_setting_async('enable_hdocs'))
         except Exception as e:
             Logging.log('Inspecting files failed: {0}'.format(e), Logging.LOG_ERROR)
 
 
-class HsDevWindowCommand(SublimeHaskellWindowCommand):
+class HsDevWindowCommand(Common.SublimeHaskellWindowCommand):
     def is_enabled(self):
-        return Settings.get_setting_async('enable_hsdev') and agent_connected() and SublimeHaskellWindowCommand.is_enabled(self)
+        return Settings.get_setting_async('enable_hsdev') and agent_connected() and Common.SublimeHaskellWindowCommand.is_enabled(self)
 
     def is_visible(self):
-        return Settings.get_setting_async('enable_hsdev') and SublimeHaskellWindowCommand.is_visible(self)
+        return Settings.get_setting_async('enable_hsdev') and Common.SublimeHaskellWindowCommand.is_visible(self)
 
 
-class HsDevTextCommand(SublimeHaskellTextCommand):
+class HsDevTextCommand(Common.SublimeHaskellTextCommand):
     def is_enabled(self):
-        return Settings.get_setting_async('enable_hsdev') and agent_connected() and SublimeHaskellTextCommand.is_enabled(self)
+        return Settings.get_setting_async('enable_hsdev') and agent_connected() and Common.SublimeHaskellTextCommand.is_enabled(self)
 
     def is_visible(self):
-        return Settings.get_setting_async('enable_hsdev') and SublimeHaskellTextCommand.is_visible(self)
+        return Settings.get_setting_async('enable_hsdev') and Common.SublimeHaskellTextCommand.is_visible(self)
 
 
 def start_agent():

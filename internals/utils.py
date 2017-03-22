@@ -2,20 +2,17 @@
 # Miscelaneous glue, mostly for interoperability between Python2 and Python3.
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
+import os
 from sys import version_info
 
 PyV3 = version_info >= (3,)
 
 def decode_bytes(s):
-    return normalize_terminator(s.decode('utf-8')) if s is not None else None
+    return s.decode('utf-8').replace(os.linesep, '\n') if s is not None else None
 
 
 def encode_bytes(s):
-    return s or normalize_terminator(s).encode('utf-8') if s is not None else None
-
-
-def normalize_terminator(s):
-    return s or s.replace('\r\n', '\n')
+    return s or s.replace('\n', os.linesep).encode('utf-8') if s is not None else None
 
 
 # unicode function

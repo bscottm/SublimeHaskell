@@ -1,4 +1,5 @@
 import threading
+
 import sublime
 
 try:
@@ -7,7 +8,7 @@ except ImportError:
     import Queue as queue
 
 if int(sublime.version()) < 3000:
-    from sublime_haskell_common import log, log_debug
+    import internals.logging as Logging
 else:
     import SublimeHaskell.internals.logging as Logging
 

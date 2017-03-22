@@ -6,12 +6,11 @@ import threading
 import time
 
 if int(sublime.version()) < 3000:
-    from sublime_haskell_common import get_cabal_project_dir_and_name_of_view, get_setting, get_setting_async, \
-        is_haskell_source
-    from internals.locked_object import LockedObject
-    from internals.settings import get_setting_async
+    import sublime_haskell_common as Common
+    import internals.locked_object as LockedObject
+    import internals.settings as Settings
 else:
-    from SublimeHaskell.sublime_haskell_common import get_cabal_project_dir_and_name_of_view, is_haskell_source
+    import SublimeHaskell.sublime_haskell_common as Common
     import SublimeHaskell.internals.locked_object as LockedObject
     import SublimeHaskell.internals.settings as Settings
 
@@ -26,7 +25,7 @@ class SublimeHaskellAutobuild(sublime_plugin.EventListener):
         auto_build_enabled = Settings.get_setting('enable_auto_build')
         auto_check_enabled = Settings.get_setting('enable_auto_check')
         auto_lint_enabled = Settings.get_setting('enable_auto_lint')
-        cabal_project_dir, cabal_project_name = get_cabal_project_dir_and_name_of_view(view)
+        cabal_project_dir, cabal_project_name = Common.get_cabal_project_dir_and_name_of_view(view)
 
         # don't flycheck
         self.fly_agent.nofly()
@@ -46,7 +45,7 @@ class SublimeHaskellAutobuild(sublime_plugin.EventListener):
     def on_modified(self, view):
         lint_check_fly = Settings.get_setting('lint_check_fly')
 
-        if lint_check_fly and is_haskell_source(view) and view.file_name():
+        if lint_check_fly and Common.is_haskell_source(view) and view.file_name():
             self.fly_agent.fly(view)
 
 

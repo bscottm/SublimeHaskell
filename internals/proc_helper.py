@@ -4,6 +4,7 @@
 
 import errno
 import io
+import json
 import subprocess
 import os
 import os.path
@@ -13,9 +14,10 @@ import platform
 import sublime
 
 if int(sublime.version()) < 3000:
-    from internals.locked_object import LockedObject
-    from internals.settings import get_setting_async
-    from internal.utils import decode_bytes, encode_bytes
+    # from internals.locked_object import LockedObject
+    # from internals.settings import get_setting_async
+    # from internal.utils import decode_bytes, encode_bytes
+    pass
 else:
     import SublimeHaskell.sublime_haskell_common as Common
     import SublimeHaskell.internals.logging as Logging
@@ -260,7 +262,6 @@ class ProcHelper(object):
     def invoke_tool(command, tool_name, input='', on_result=None, filename=None, on_line=None, check_enabled=True, **popen_kwargs):
         if check_enabled and not Settings.get_setting_async(Utils.tool_enabled(tool_name)):
             return None
-        # extended_env = get_extended_env()
 
         source_dir = Common.get_source_dir(filename)
 
@@ -293,3 +294,42 @@ class ProcHelper(object):
 
         return None
 
+
+def get_source_dir(filename):
+    """
+    Get root of hs-source-dirs for filename in project
+    """
+    if not filename:
+        return os.path.expanduser('~')
+        # return os.getcwd()
+
+    cabal_dir, _ = Common.get_cabal_project_dir_and_name_of_file(filename)
+    if not cabal_dir:
+        return os.path.dirname(filename)
+
+    _, cabal_file = Common.get_cabal_in_dir(cabal_dir)
+    exit_code, out, _ = ProcHelper.run_process(['hsinspect', cabal_file])
+
+    if exit_code == 0:
+        info = json.loads(out)
+
+        dirs = ["."]
+
+        if 'error' not in info and 'description' in info:
+            # collect all hs-source-dirs
+            descr = info['description']
+            if descr['library']:
+                dirs.extend(descr['library']['info']['source-dirs'])
+            for i in descr['executables']:
+                dirs.extend(i['info']['source-dirs'])
+            for test in descr['tests']:
+                dirs.extend(test['info']['source-dirs'])
+
+        paths = [os.path.abspath(os.path.join(cabal_dir, d)) for d in dirs]
+        paths.sort(key=lambda p: -len(p))
+
+        for path in paths:
+            if filename.startswith(path):
+                return path
+
+    return os.path.dirname(filename)
