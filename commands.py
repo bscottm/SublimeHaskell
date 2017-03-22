@@ -16,9 +16,10 @@ if int(sublime.version()) < 3000:
 else:
     from SublimeHaskell.sublime_haskell_common import *
     import SublimeHaskell.internals.logging as Logging
-    from SublimeHaskell.internals.proc_helper import ProcHelper
-    from SublimeHaskell.internals.settings import get_setting_async
-    from SublimeHaskell.internals.output_collector import OutputCollector
+    import SublimeHaskell.internals.proc_helper as ProcHelper
+    import SublimeHaskell.internals.settings as Settings
+    import SublimeHaskell.internals.output_collector as OutputCollector
+    import SublimeHaskell.internals.utils as Utils
     import SublimeHaskell.autocomplete as autocomplete
     import SublimeHaskell.symbols as symbols
     import SublimeHaskell.hsdev as hsdev
@@ -31,7 +32,7 @@ def is_scanned_source(view = None):
     window, view, file_shown_in_view = get_haskell_command_window_view_file_project(view)
     if file_shown_in_view is None:
         return False
-    m = head_of(hsdev.client.module(file = file_shown_in_view))
+    m = Utils.head_of(hsdev.client.module(file = file_shown_in_view))
     return m is not None
 
 
@@ -39,7 +40,7 @@ def is_in_project(view = None):
     window, view, file_shown_in_view = get_haskell_command_window_view_file_project(view)
     if file_shown_in_view is None:
         return False
-    m = head_of(hsdev.client.module(file = file_shown_in_view))
+    m = Utils.head_of(hsdev.client.module(file = file_shown_in_view))
     if m is None:
         return False
     return m.location.project is not None
@@ -270,7 +271,7 @@ class SublimeHaskellGoTo(hsdev.HsDevWindowCommand):
         (self.line, self.column) = self.view.rowcol(self.view.sel()[0].a)
 
         if project:
-            current_project = head_of(hsdev.client.module(file = self.current_filename)).location.project
+            current_project = Utils.head_of(hsdev.client.module(file = self.current_filename)).location.project
             if not current_project:
                 show_status_message('File {0} is not in project'.format(self.current_filename), False)
                 return
@@ -629,10 +630,10 @@ class SublimeHaskellInsertImportForSymbol(hsdev.HsDevTextCommand):
         self.module_name = module_name
         contents = self.view.substr(sublime.Region(0, self.view.size()))
         contents_part = contents[0: list(re.finditer('^import.*$', contents, re.MULTILINE))[-1].end()]
-        ProcHelper.invoke_tool(['hsinspect'], 'hsinspect', contents_part, self.on_inspected, check_enabled=False)
+        ProcHelper.ProcHelper.invoke_tool(['hsinspect'], 'hsinspect', contents_part, self.on_inspected, check_enabled=False)
 
     def on_inspected(self, result):
-        cur_module = hsdev.parse_module(json.loads(result)['module']) if self.view.is_dirty() else head_of(hsdev.client.module(file = self.current_file_name))
+        cur_module = hsdev.parse_module(json.loads(result)['module']) if self.view.is_dirty() else Utils.head_of(hsdev.client.module(file = self.current_file_name))
         imports = sorted(cur_module.imports, key = lambda i: i.position.line)
         after = [i for i in imports if i.module > self.module_name]
 
@@ -679,7 +680,7 @@ class SublimeHaskellClearImports(hsdev.HsDevTextCommand):
         if not self.current_file_name:
             self.current_file_name = self.view.file_name()
 
-        cur_module = head_of(hsdev.client.module(file = self.current_file_name))
+        cur_module = Utils.head_of(hsdev.client.module(file = self.current_file_name))
         if not cur_module:
             Logging.log("module not scanned")
             return
@@ -687,7 +688,7 @@ class SublimeHaskellClearImports(hsdev.HsDevTextCommand):
         imports = sorted(cur_module.imports, key = lambda i: i.position.line)
 
         cmd = ['hsclearimports', self.current_file_name, '--max-import-list', '32']
-        exit_code, cleared, err = ProcHelper.run_process(cmd)
+        exit_code, cleared, err = ProcHelper.ProcHelper.run_process(cmd)
         if exit_code != 0:
             Logging.log('hsclearimports error: {0}'.format(err), Logging.LOG_ERROR)
             return
@@ -720,7 +721,7 @@ class SublimeHaskellBrowseModule(hsdev.HsDevWindowCommand):
         m = None
 
         if filename:
-            m = head_of(hsdev.client.module(file = filename))
+            m = Utils.head_of(hsdev.client.module(file = filename))
             if not m:
                 show_status_message('Module {0} not found'.format(filename))
                 return
@@ -1108,7 +1109,7 @@ class SublimeHaskellAutoFix(hsdev.HsDevWindowCommand):
 
             self.status_msg = status_message_process('Autofix: ' + self.window.active_view().file_name(), priority = 3)
             self.status_msg.start()
-            hsdev.client.check_lint(files = [self.window.active_view().file_name()], ghc = get_setting_async('ghc_opts'), wait = False, on_response = on_resp, on_error = on_err, timeout = 0)
+            hsdev.client.check_lint(files=[self.window.active_view().file_name()], ghc=Settings.get_setting_async('ghc_opts'), wait=False, on_response=on_resp, on_error=on_err, timeout=0)
 
     def on_got_messages(self):
         self.corrections = list(filter(lambda corr: os.path.samefile(corr.file, self.window.active_view().file_name()), hsdev.client.autofix_show(self.messages)))
@@ -1227,7 +1228,7 @@ class SublimeHaskellStackExec(sublime_plugin.TextCommand):
     class SExecRunner(threading.Thread):
         def __init__(self, panel, cmdargs):
             super(SExecRunner, self).__init__()
-            self.sexec_proc = OutputCollector(panel, cmdargs)
+            self.sexec_proc = OutputCollector.OutputCollector(panel, cmdargs)
 
         def run(self):
             self.sexec_proc.wait()

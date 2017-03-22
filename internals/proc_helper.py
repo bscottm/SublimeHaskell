@@ -19,7 +19,7 @@ if int(sublime.version()) < 3000:
 else:
     import SublimeHaskell.sublime_haskell_common as Common
     import SublimeHaskell.internals.logging as Logging
-    from SublimeHaskell.internals.locked_object import LockedObject
+    import SublimeHaskell.internals.locked_object as LockedObject
     import SublimeHaskell.internals.settings as Settings
     import SublimeHaskell.internals.utils as Utils
 
@@ -30,7 +30,7 @@ class ProcHelper(object):
     """Command and tool process execution helper."""
 
     # Tool name -> executable path cache. Avoids probing the file system multiple times.
-    which_cache = LockedObject({})
+    which_cache = LockedObject.LockedObject({})
 
     # Augmented environment for the subprocesses. Specifically, we really want
     # to augment the user's PATH used to search for executables and tools:
@@ -258,7 +258,7 @@ class ProcHelper(object):
 
     @staticmethod
     def invoke_tool(command, tool_name, input='', on_result=None, filename=None, on_line=None, check_enabled=True, **popen_kwargs):
-        if check_enabled and not Settings.get_setting_async(Common.tool_enabled(tool_name)):
+        if check_enabled and not Settings.get_setting_async(Utils.tool_enabled(tool_name)):
             return None
         # extended_env = get_extended_env()
 
@@ -281,8 +281,8 @@ class ProcHelper(object):
 
         except OSError as e:
             if e.errno == errno.ENOENT:
-                Common.output_error_async(sublime.active_window(), "SublimeHaskell: {0} was not found!\n'{1}' is set to False".format(tool_name, Common.tool_enabled(tool_name)))
-                Settings.set_setting_async(Common.tool_enabled(tool_name), False)
+                Common.output_error_async(sublime.active_window(), "SublimeHaskell: {0} was not found!\n'{1}' is set to False".format(tool_name, Utils.tool_enabled(tool_name)))
+                Settings.set_setting_async(Utils.tool_enabled(tool_name), False)
             else:
                 Logging.log('{0} fails with {1}, command: {2}'.format(tool_name, e, command), Logging.LOG_ERROR)
 

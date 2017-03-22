@@ -17,9 +17,9 @@ if int(sublime.version()) < 3000:
 else:
     from SublimeHaskell.sublime_haskell_common import *
     import SublimeHaskell.internals.logging as Logging
-    from SublimeHaskell.internals.settings import get_setting_async
+    import SublimeHaskell.internals.settings as Settings
     from SublimeHaskell.internals.utils import decode_bytes, PyV3
-    from SublimeHaskell.internals.output_collector import OutputCollector
+    import SublimeHaskell.internals.output_collector as OutputCollector
     import SublimeHaskell.symbols as symbols
 
 # This regex matches an unindented line, followed by zero or more
@@ -140,12 +140,12 @@ def wait_for_chain_to_complete(view, cabal_project_dir, msg, cmds, on_done):
     # run and wait commands, fail on first fail
     # stdout = ''
     collected_out = []
-    output_log = output_panel(view.window(), '', panel_name=BUILD_LOG_PANEL_NAME, show_panel=get_setting_async('show_output_window'))
+    output_log = output_panel(view.window(), '', panel_name=BUILD_LOG_PANEL_NAME, show_panel=Settings.get_setting_async('show_output_window'))
     for cmd in cmds:
         output_text(output_log, ' '.join(cmd) + '...\n')
 
         # Don't tie stderr to stdout, since we're interested in the error messages
-        out = OutputCollector(output_log, cmd, cwd=cabal_project_dir)
+        out = OutputCollector.OutputCollector(output_log, cmd, cwd=cabal_project_dir)
         exit_code, cmd_out = out.wait()
         collected_out.append(cmd_out)
 
@@ -208,7 +208,7 @@ def show_output_result_text(view, msg, text, exit_code, base_dir):
     show_status_message_process(msg, success)
     # Show panel if there is any text to show (without the part that we add)
     if text:
-        if get_setting_async('show_error_window'):
+        if Settings.get_setting_async('show_error_window'):
             sublime.set_timeout(lambda: write_output(view, output, base_dir), 0)
 
 

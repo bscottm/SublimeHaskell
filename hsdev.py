@@ -23,8 +23,8 @@ else:
     import SublimeHaskell.symbols as symbols
     from SublimeHaskell.sublime_haskell_common import *
     import SublimeHaskell.internals.logging as Logging
-    from SublimeHaskell.internals.locked_object import LockedObject
-    from SublimeHaskell.internals.proc_helper import ProcHelper
+    import SublimeHaskell.internals.locked_object as LockedObject
+    import SublimeHaskell.internals.proc_helper as ProcHelper
     import SublimeHaskell.internals.settings as Settings
     from SublimeHaskell.internals.utils import decode_bytes, PyV3
     from SublimeHaskell.internals.output_collector import DescriptorDrain
@@ -70,7 +70,7 @@ def flatten_opts(opts):
 
 def hsdev_version():
     try:
-        exit_code, out, err = ProcHelper.run_process(['hsdev', 'version'])
+        exit_code, out, err = ProcHelper.ProcHelper.run_process(['hsdev', 'version'])
         print("out = {0}".format(out))
         if exit_code == 0:
             m = re.match(r'(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)\.(?P<build>\d+)', out)
@@ -129,7 +129,7 @@ def hsinspect(module = None, file = None, cabal = None, ghc_opts = []):
     for opt in ghc_opts:
         cmd.extend(['-g', opt])
 
-    with ProcHelper(cmd, 'hsinspect', lambda s: json.loads(s), file, None) as p:
+    with ProcHelper.ProcHelper(cmd, 'hsinspect', lambda s: json.loads(s), file, None) as p:
         if p.process is not None:
             err_code, stdout, stderr = p.wait()
             if 'error' in stdout:
@@ -562,7 +562,7 @@ class HsDev(object):
         self.listener = None
         self.hsdev_address = None
         self.autoconnect = True
-        self.map = LockedObject({})
+        self.map = LockedObject.LockedObject({})
         self.id = 1
 
         self.connect_fun = None
@@ -600,7 +600,7 @@ class HsDev(object):
             (log_config, ["--log-config", log_config])])
 
         Logging.log('Starting hsdev server', Logging.LOG_INFO)
-        p = ProcHelper(cmd)
+        p = ProcHelper.ProcHelper(cmd)
         if p.process is None:
             Logging.log('Failed to create hsdev process', Logging.LOG_ERROR)
             return None
@@ -1182,9 +1182,9 @@ class HsDevAgent(threading.Thread):
     def __init__(self):
         super(HsDevAgent, self).__init__()
         self.daemon = True
-        self.cabal_to_load = LockedObject([])
-        self.dirty_files = LockedObject([])
-        self.dirty_paths = LockedObject([])
+        self.cabal_to_load = LockedObject.LockedObject([])
+        self.dirty_files = LockedObject.LockedObject([])
+        self.dirty_paths = LockedObject.LockedObject([])
         self.hsdev_process = HsDevProcess(
             cache = os.path.join(sublime_haskell_cache_path(), 'hsdev'),
             log_file = os.path.join(sublime_haskell_cache_path(), 'hsdev', 'hsdev.log'),
@@ -1354,7 +1354,7 @@ class HsDevAgent(threading.Thread):
     def inspect_cabal(self, cabal = None):
         try:
             with status_message_process('Inspecting {0}'.format(cabal or 'cabal'), priority = 1) as s:
-                self.client_back.scan(cabal = (cabal == 'cabal'), sandboxes = [] if cabal == 'cabal' else [cabal], on_notify = scan_status(s), wait = True, docs = get_setting_async('enable_hdocs'))
+                self.client_back.scan(cabal = (cabal == 'cabal'), sandboxes = [] if cabal == 'cabal' else [cabal], on_notify = scan_status(s), wait = True, docs = Settings.get_setting_async('enable_hdocs'))
         except Exception as e:
             Logging.log('loading standard modules info for {0} failed with {1}'.format(cabal or 'cabal', e), Logging.LOG_ERROR)
 
@@ -1364,7 +1364,7 @@ class HsDevAgent(threading.Thread):
         if paths or projects or files:
             try:
                 with status_message_process('Inspecting', priority = 1) as s:
-                    self.client_back.scan(paths = paths, projects = projects, files = files, on_notify = scan_status(s), wait = True, ghc = get_setting_async('ghc_opts'), docs = get_setting_async('enable_hdocs'))
+                    self.client_back.scan(paths = paths, projects = projects, files = files, on_notify = scan_status(s), wait = True, ghc = Settings.get_setting_async('ghc_opts'), docs = Settings.get_setting_async('enable_hdocs'))
             except Exception as e:
                 Logging.log('Inspection failed: {0}'.format(e), Logging.LOG_ERROR)
 
@@ -1373,7 +1373,7 @@ class HsDevAgent(threading.Thread):
     def inspect_path(self, path):
         try:
             with status_message_process('Inspecting path {0}'.format(path), priority = 1) as s:
-                self.client_back.scan(paths = [path], on_notify = scan_status(s), wait = True, ghc = get_setting_async('ghc_opts'), docs = get_setting_async('enable_hdocs'))
+                self.client_back.scan(paths = [path], on_notify = scan_status(s), wait = True, ghc = Settings.get_setting_async('ghc_opts'), docs = Settings.get_setting_async('enable_hdocs'))
         except Exception as e:
             Logging.log('Inspecting path {0} failed: {1}'.format(path, e), Logging.LOG_ERROR)
 
@@ -1384,7 +1384,7 @@ class HsDevAgent(threading.Thread):
 
         try:
             with status_message_process('Inspecting project {0}'.format(project_name), priority = 1) as s:
-                self.client_back.scan(projects = [cabal_dir], on_notify = scan_status(s), wait = True, docs = get_setting_async('enable_hdocs'))
+                self.client_back.scan(projects = [cabal_dir], on_notify = scan_status(s), wait = True, docs = Settings.get_setting_async('enable_hdocs'))
         except Exception as e:
             Logging.log('Inspecting project {0} failed: {1}'.format(cabal_dir, e), Logging.LOG_ERROR)
 
@@ -1393,25 +1393,25 @@ class HsDevAgent(threading.Thread):
     def inspect_files(self, filenames):
         try:
             with status_message_process('Inspecting files', priority = 1) as s:
-                self.client_back.scan(files = filenames, on_notify = scan_status(s), wait = True, ghc = get_setting_async('ghc_opts'), docs = get_setting_async('enable_hdocs'))
+                self.client_back.scan(files = filenames, on_notify = scan_status(s), wait = True, ghc = Settings.get_setting_async('ghc_opts'), docs = Settings.get_setting_async('enable_hdocs'))
         except Exception as e:
             Logging.log('Inspecting files failed: {0}'.format(e), Logging.LOG_ERROR)
 
 
 class HsDevWindowCommand(SublimeHaskellWindowCommand):
     def is_enabled(self):
-        return get_setting_async('enable_hsdev') and agent_connected() and SublimeHaskellWindowCommand.is_enabled(self)
+        return Settings.get_setting_async('enable_hsdev') and agent_connected() and SublimeHaskellWindowCommand.is_enabled(self)
 
     def is_visible(self):
-        return get_setting_async('enable_hsdev') and SublimeHaskellWindowCommand.is_visible(self)
+        return Settings.get_setting_async('enable_hsdev') and SublimeHaskellWindowCommand.is_visible(self)
 
 
 class HsDevTextCommand(SublimeHaskellTextCommand):
     def is_enabled(self):
-        return get_setting_async('enable_hsdev') and agent_connected() and SublimeHaskellTextCommand.is_enabled(self)
+        return Settings.get_setting_async('enable_hsdev') and agent_connected() and SublimeHaskellTextCommand.is_enabled(self)
 
     def is_visible(self):
-        return get_setting_async('enable_hsdev') and SublimeHaskellTextCommand.is_visible(self)
+        return Settings.get_setting_async('enable_hsdev') and SublimeHaskellTextCommand.is_visible(self)
 
 
 def start_agent():

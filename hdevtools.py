@@ -13,7 +13,7 @@ if int(sublime.version()) < 3000:
     from parseoutput import parse_info
 else:
     from SublimeHaskell.sublime_haskell_common import *
-    from SublimeHaskell.internals.proc_helper import ProcHelper
+    import SublimeHaskell.internals.proc_helper as ProcHelper
     import SublimeHaskell.internals.logging as Logging
     import SublimeHaskell.internals.settings as Settings
     from SublimeHaskell.internals.output_collector import DescriptorDrain
@@ -47,7 +47,7 @@ def call_hdevtools_and_wait(arg_list, filename = None, cabal = None):
         arg_list.append('--socket={0}'.format(hdevtools_socket))
 
     try:
-        exit_code, out, err = ProcHelper.run_process(['hdevtools'] + arg_list + ghc_opts_args, cwd = source_dir)
+        exit_code, out, err = ProcHelper.ProcHelper.run_process(['hdevtools'] + arg_list + ghc_opts_args, cwd = source_dir)
         if exit_code != 0:
             show_hdevtools_error_and_disable()
             raise Exception("hdevtools exited with status %d and stderr: %s" % (exit_code, err))
@@ -77,10 +77,10 @@ def admin(cmds, wait = False, **popen_kwargs):
 
     try:
         if wait:
-            exit_code, stdout, stderr = ProcHelper.run_process(command, **popen_kwargs)
+            exit_code, stdout, stderr = ProcHelper.ProcHelper.run_process(command, **popen_kwargs)
             return stdout if exit_code == 0 else 'error running {0}: {1}'.format(command, stderr)
         else:
-            p = ProcHelper(command, '', **popen_kwargs)
+            p = ProcHelper.ProcHelper(command, '', **popen_kwargs)
             DescriptorDrain('hdevtools stdout', p.stdout).start()
             DescriptorDrain('hdevtools stderr', p.stderr).start()
             return ''

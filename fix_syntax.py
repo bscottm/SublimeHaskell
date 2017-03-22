@@ -7,20 +7,21 @@
 # SublimeHaskell/Syntaxes/Haskell-SublimeHaskell.tmLanguage instead.
 #
 # Forked from https://gist.github.com/2940866.
+import os
+
 import sublime
 import sublime_plugin
-import os
 
 if int(sublime.version()) < 3000:
     from internals.settings import get_setting_async
 else:
-    from SublimeHaskell.internals.settings import get_setting_async
+    import SublimeHaskell.internals.settings as Settings
 
 
 class DetectFileTypeCommand(sublime_plugin.EventListener):
 
     def on_load(self, view):
-        if get_setting_async('use_improved_syntax', True):
+        if Settings.get_setting_async('use_improved_syntax', True):
             filename = view.file_name()
             if not filename:  # buffer has never been saved
                 return

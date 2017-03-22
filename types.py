@@ -17,8 +17,9 @@ if int(sublime.version()) < 3000:
     from parseoutput import sublime_column_to_ghc_column, ghc_column_to_sublime_column
     from symbols import unicode_operators, use_unicode_operators
 else:
-    from SublimeHaskell.sublime_haskell_common import is_enabled_haskell_command, show_status_message, SublimeHaskellTextCommand, output_panel, output_text, get_ghc_opts, is_haskell_source, show_panel, hide_panel, head_of
-    from SublimeHaskell.internals.settings import get_setting_async
+    from SublimeHaskell.sublime_haskell_common import is_enabled_haskell_command, show_status_message, SublimeHaskellTextCommand, output_panel, output_text, get_ghc_opts, is_haskell_source, show_panel, hide_panel
+    import SublimeHaskell.internals.settings as Settings
+    import SublimeHaskell.internals.utils as Utils
     from SublimeHaskell.autocomplete import get_qualified_symbol_at_region
     import SublimeHaskell.hsdev as hsdev
     from SublimeHaskell.hdevtools import hdevtools_type
@@ -176,16 +177,16 @@ def sorted_types(view, types, pt):
 def get_type(view, filename, module_name, line, column, cabal = None):
     result = None
 
-    if get_setting_async('enable_hsdev'):
+    if Settings.get_setting_async('enable_hsdev'):
         # Convert from hsdev one-based locations to sublime zero-based positions
         ts = get_types(filename, cabal=cabal) or []
         pt = FilePosition(line, column).point(view)
         return sorted_types(view, ts, pt)
     column = sublime_column_to_ghc_column(view, line, column)
     line = line + 1
-    if get_setting_async('enable_hdevtools'):
+    if Settings.get_setting_async('enable_hdevtools'):
         result = hdevtools_type(filename, line, column, cabal = cabal)
-    if not result and module_name and get_setting_async('enable_ghc_mod'):
+    if not result and module_name and Settings.get_setting_async('enable_ghc_mod'):
         result = ghcmod_type(filename, module_name, line, column)
     return parse_type_output(view, result) if result else None
 
@@ -201,7 +202,7 @@ def get_type_view(view, selection = None):
     column = c
 
     module_name = None
-    m = head_of(hsdev.client.module(file = filename))
+    m = Utils.head_of(hsdev.client.module(file = filename))
     if m:
         module_name = m.name
 
@@ -209,7 +210,7 @@ def get_type_view(view, selection = None):
 
 
 def get_types(filename, on_result = None, cabal = None):
-    if get_setting_async('enable_hsdev'):
+    if Settings.get_setting_async('enable_hsdev'):
         def to_file_pos(r):
             return FilePosition(int(r['line']) - 1, int(r['column']) - 1)
 
@@ -250,7 +251,7 @@ class SublimeHaskellShowType(SublimeHaskellTextCommand):
             column = c
 
         module_name = None
-        m = head_of(hsdev.client.module(file = filename))
+        m = Utils.head_of(hsdev.client.module(file = filename))
         if m:
             module_name = m.name
 

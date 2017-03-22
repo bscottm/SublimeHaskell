@@ -13,7 +13,7 @@ if int(sublime.version()) < 3000:
     import symbols
 else:
     from SublimeHaskell.sublime_haskell_common import *
-    from SublimeHaskell.internals.settings import get_setting_async
+    import SublimeHaskell.internals.settings as Settings
     import SublimeHaskell.internals.logging as Logging
     import SublimeHaskell.hsdev as hsdev
     from SublimeHaskell.parseoutput import OutputMessage, parse_output_messages, show_output_result_text, format_output_messages, mark_messages_in_views, hide_output, set_global_error_messages, write_output, parse_info
@@ -27,13 +27,13 @@ def lint_as_hints(msgs):
 
 
 def hsdev_check():
-    return (hsdev.client.check, lambda file: [file], lambda ms: ms, {'ghc': get_setting_async('ghc_opts')})
+    return (hsdev.client.check, lambda file: [file], lambda ms: ms, {'ghc': Settings.get_setting_async('ghc_opts')})
 
 
 def hsdev_lint():
     return (hsdev.client.lint, lambda file: [file], lambda ms: ms, {})
 # def hsdev_check_lint():
-#     return (hsdev.client.ghcmod_check_lint, lambda file: [file], lambda ms: ms, { 'ghc': get_setting_async('ghc_opts') })
+#     return (hsdev.client.ghcmod_check_lint, lambda file: [file], lambda ms: ms, { 'ghc': Settings.get_setting_async('ghc_opts') })
 
 
 def messages_as_hints(cmd):
@@ -113,7 +113,7 @@ class SublimeHaskellHsDevChain(SublimeHaskellTextCommand):
 
         set_global_error_messages(output_messages)
         output_text = format_output_messages(output_messages)
-        if get_setting_async('show_error_window'):
+        if Settings.get_setting_async('show_error_window'):
             sublime.set_timeout(lambda: write_output(
                 self.view,
                 output_text,
@@ -128,10 +128,10 @@ class SublimeHaskellHsDevChain(SublimeHaskellTextCommand):
 def ghcmod_command(cmdname):
     def wrap(fn):
         def wrapper(self, *args, **kwargs):
-            if get_setting_async('enable_hsdev'):
+            if Settings.get_setting_async('enable_hsdev'):
                 Logging.log("Invoking '{0}' command via hsdev".format(cmdname), Logging.LOG_TRACE)
                 return fn(self, *args, **kwargs)
-            elif get_setting_async('enable_ghc_mod'):
+            elif Settings.get_setting_async('enable_ghc_mod'):
                 Logging.log("Invoking '{0}' command via ghc-mod".format(cmdname), Logging.LOG_TRACE)
                 self.view.window().run_command('sublime_haskell_ghc_mod_{0}'.format(cmdname))
             else:

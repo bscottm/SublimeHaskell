@@ -12,7 +12,7 @@ if int(sublime.version()) < 3000:
     from internals.settings import get_setting_async
 else:
     from SublimeHaskell.sublime_haskell_common import get_cabal_project_dir_and_name_of_view, is_haskell_source
-    from SublimeHaskell.internals.locked_object import LockedObject
+    import SublimeHaskell.internals.locked_object as LockedObject
     import SublimeHaskell.internals.settings as Settings
 
 
@@ -54,7 +54,7 @@ class FlyCheckLint(threading.Thread):
     def __init__(self):
         super(FlyCheckLint, self).__init__()
         self.daemon = True
-        self.view = LockedObject({'view':None, 'mtime':None})
+        self.view = LockedObject.LockedObject({'view':None, 'mtime':None})
         self.event = threading.Event()
 
     def fly(self, view):

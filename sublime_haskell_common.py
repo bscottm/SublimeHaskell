@@ -24,8 +24,9 @@ if int(sublime.version()) < 3000:
     from internals.utils import PyV3
 else:
     import SublimeHaskell.internals.logging as Logging
-    from SublimeHaskell.internals.locked_object import LockedObject
+    import SublimeHaskell.internals.locked_object as LockedObject
     import SublimeHaskell.internals.settings as Settings
+    import SublimeHaskell.internals.proc_helper as ProcHelper
 
 # Maximum seconds to wait for window to appear
 # This dirty hack is used in wait_for_window function
@@ -81,16 +82,6 @@ def get_haskell_command_window_view_file_project(view = None):
     if view:
         file_name = view.file_name()
     return window, view, file_name
-
-
-def head_of(l):
-    if l is None or not len(l):
-        return None
-    return l[0]
-
-
-def tool_enabled(feature):
-    return 'enable_{0}'.format(feature)
 
 def get_cabal_project_dir_and_name_of_view(view):
     """Return the path to the .cabal file project for the source file in the
@@ -192,7 +183,7 @@ def get_source_dir(filename):
         return os.path.dirname(filename)
 
     _project_name, cabal_file = get_cabal_in_dir(cabal_dir)
-    exit_code, out, err = ProcHelper.run_process(['hsinspect', cabal_file])
+    exit_code, out, err = ProcHelper.ProcHelper.run_process(['hsinspect', cabal_file])
 
     if exit_code == 0:
         info = json.loads(out)
@@ -281,7 +272,7 @@ def call_ghcmod_and_wait(arg_list, filename=None, cabal = None):
             cabal_project_dir = get_cabal_project_dir_of_file(filename)
             if cabal_project_dir:
                 ghc_mod_current_dir = cabal_project_dir
-        exit_code, out, err = ProcHelper.run_process(command, cwd=ghc_mod_current_dir)
+        exit_code, out, err = ProcHelper.ProcHelper.run_process(command, cwd=ghc_mod_current_dir)
 
         if exit_code != 0:
             raise Exception("%s exited with status %d and stderr: %s" % (' '.join(command), exit_code, err))
@@ -599,9 +590,9 @@ class StatusMessage(object):
 
 class StatusMessagesManager(threading.Thread):
     # msg ⇒ StatusMessage
-    messages = LockedObject({})
+    messages = LockedObject.LockedObject({})
     # [StatusMessage × time]
-    priorities = LockedObject([])
+    priorities = LockedObject.LockedObject([])
 
     def __init__(self):
         super(StatusMessagesManager, self).__init__()
@@ -758,16 +749,16 @@ class with_status_message(object):
     def change_message(self, new_msg):
         self.msg.change_message(new_msg)
 
-    def percentage_message(self, current, total = 100):
+    def percentage_message(self, current, total=100):
         self.change_message('{0} ({1}%)'.format(self.msg, int(current * 100 / total)))
 
 
-def status_message(msg, is_ok = True, priority = 0):
-    return with_status_message(StatusMessage.status(msg, priority = priority), is_ok = is_ok)
+def status_message(msg, is_ok=True, priority=0):
+    return with_status_message(StatusMessage.status(msg, priority=priority), is_ok=is_ok)
 
 
-def status_message_process(msg, is_ok = True, timeout = 300, priority = 0):
-    return with_status_message(StatusMessage.process(msg, timeout = timeout, priority = priority), is_ok = is_ok)
+def status_message_process(msg, is_ok=True, timeout=300, priority=0):
+    return with_status_message(StatusMessage.process(msg, timeout=timeout, priority=priority), is_ok=is_ok)
 
 
 def sublime_haskell_cache_path():

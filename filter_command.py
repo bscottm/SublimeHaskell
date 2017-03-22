@@ -6,7 +6,7 @@ if int(sublime.version()) < 3000:
     from internals.proc_helper import ProcHelper
 else:
     from SublimeHaskell.sublime_haskell_common import SublimeHaskellTextCommand
-    from SublimeHaskell.internals.proc_helper import ProcHelper
+    import SublimeHaskell.internals.proc_helper as ProcHelper
 
 class SublimeHaskellFilterCommand(SublimeHaskellTextCommand):
     """Utility class to run filter-like commands, for example, 'stylish-haskell' and 'hindent'. Error/diagnostic
@@ -32,7 +32,7 @@ class SublimeHaskellFilterCommand(SublimeHaskellTextCommand):
                 # Newline conversion seems dubious here, but... leave it alone for the time being.
                 sel_str = self.view.substr(selection).replace('\r\n', '\n')
 
-                with ProcHelper(self.indenter, sel_str) as p:
+                with ProcHelper.ProcHelper(self.indenter, sel_str) as p:
                     if p.process is not None:
                         exit_code, out, err = p.wait()
                         # stylish-haskell does not have a non-zero exit code if it errors out! (Surprise!)

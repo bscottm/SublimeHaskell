@@ -19,9 +19,9 @@ if int(sublime.version()) < 3000:
 else:
     from SublimeHaskell.sublime_haskell_common import *
     import SublimeHaskell.internals.logging as Logging
-    from SublimeHaskell.internals.locked_object import LockedObject
-    from SublimeHaskell.internals.settings import get_setting_async
-    from SublimeHaskell.internals.utils import to_unicode
+    import SublimeHaskell.internals.locked_object as LockedObject
+    import SublimeHaskell.internals.settings as Settings
+    import SublimeHaskell.internals.utils as Utils
     from SublimeHaskell.hdevtools import start_hdevtools, stop_hdevtools
     import SublimeHaskell.hsdev as hsdev
     from SublimeHaskell.worker import run_async
@@ -47,9 +47,9 @@ EXPORT_MODULE_RE = re.compile(r'\bmodule\s+[\w\d\.]*$')
 # Gets available LANGUAGE options and import modules from ghc-mod
 def get_language_pragmas():
 
-    if get_setting_async('enable_hsdev'):
+    if Settings.get_setting_async('enable_hsdev'):
         return hsdev.client.langs()
-    elif get_setting_async('enable_ghc_mod'):
+    elif Settings.get_setting_async('enable_ghc_mod'):
         return call_ghcmod_and_wait(['lang']).splitlines()
 
     return []
@@ -57,9 +57,9 @@ def get_language_pragmas():
 
 def get_flags_pragmas():
 
-    if get_setting_async('enable_hsdev'):
+    if Settings.get_setting_async('enable_hsdev'):
         return hsdev.client.flags()
-    elif get_setting_async('enable_ghc_mod'):
+    elif Settings.get_setting_async('enable_ghc_mod'):
         return call_ghcmod_and_wait(['flag']).splitlines()
 
     return []
@@ -116,7 +116,7 @@ class AutoCompletion(object):
 
         # cabal name => set of modules, where cabal name is 'cabal' for cabal or sandbox path
         # for cabal-devs
-        self.module_completions = LockedObject({})
+        self.module_completions = LockedObject.LockedObject({})
 
         # keywords
         # TODO: keywords can't appear anywhere, we can suggest in right places
@@ -128,7 +128,7 @@ class AutoCompletion(object):
         self.current_filename = None
 
         # filename ⇒ preloaded completions + None ⇒ all completions
-        self.cache = LockedObject(CompletionCache())
+        self.cache = LockedObject.LockedObject(CompletionCache())
         self.wide_completion = None
 
     def mark_wide_completion(self, view):
@@ -162,7 +162,7 @@ class AutoCompletion(object):
             return log_result(none_comps)
         else:
             Logging.log('preparing completions for {0}'.format(file_name), Logging.LOG_DEBUG)
-            current_module = head_of(hsdev.client_back.module(file=file_name))
+            current_module = Utils.head_of(hsdev.client_back.module(file=file_name))
             if current_module:
                 comps = make_completions(
                     hsdev.client_back.complete('', file_name, timeout=None))
@@ -227,7 +227,7 @@ class AutoCompletion(object):
             self.wide_completion = None
 
         if qsymbol.module:
-            current_module = head_of(hsdev.client.module(file=current_file_name))
+            current_module = Utils.head_of(hsdev.client.module(file=current_file_name))
             current_project = None
             if current_module:
                 current_project = current_module.location.project
@@ -331,12 +331,12 @@ class AutoCompletion(object):
             if match_language:
                 if not self.language_pragmas:
                     self.language_pragmas = get_language_pragmas()
-                return [(to_unicode(c),) * 2 for c in self.language_pragmas]
+                return [(Utils.to_unicode(c),) * 2 for c in self.language_pragmas]
             match_options = OPTIONS_GHC_RE.match(line_contents)
             if match_options:
                 if not self.flags_pragmas:
                     self.flags_pragmas = get_flags_pragmas()
-                return [(to_unicode(c),) * 2 for c in self.flags_pragmas]
+                return [(Utils.to_unicode(c),) * 2 for c in self.flags_pragmas]
 
         return []
 

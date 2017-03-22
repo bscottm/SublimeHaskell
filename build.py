@@ -132,7 +132,7 @@ def stack_dist_path(project_dir):
 def get_projects():
     if hsdev.agent_connected():
         folders = sublime.active_window().folders()
-        view_files = [v.file_name() for v in sublime.active_window().views() if (is_haskell_source(v) or is_cabal_source(v)) and v.file_name()]
+        view_files = [v.file_name() for v in sublime.active_window().views() if (Common.is_haskell_source(v) or Common.is_cabal_source(v)) and v.file_name()]
 
         def npath(p):
             return os.path.normcase(os.path.normpath(p))
@@ -145,12 +145,12 @@ def get_projects():
             (hsdev.client.list_projects() or [])))
     else:
         folder_files = [src for f in sublime.active_window().folders() for src in list_files_in_dir_recursively(f) if os.path.splitext(src)[1] in [".hs", ".cabal"]]
-        view_files = [v.file_name() for v in sublime.active_window().views() if (is_haskell_source(v) or is_cabal_source(v)) and v.file_name()]
+        view_files = [v.file_name() for v in sublime.active_window().views() if (Common.is_haskell_source(v) or Common.is_cabal_source(v)) and v.file_name()]
         src_files = list(map(lambda p: os.path.normcase(os.path.normpath(p)), folder_files + view_files))
         active_projects = []
         while src_files:
             src = src_files.pop()
-            proj_dir, proj_name = get_cabal_project_dir_and_name_of_file(src)
+            proj_dir, proj_name = Common.get_cabal_project_dir_and_name_of_file(src)
             if proj_dir:
                 active_projects.append((proj_name, proj_dir))
                 src_files = [f for f in src_files if not f.startswith(proj_dir)]
@@ -169,13 +169,13 @@ def select_project(window, on_selected, filter_project=None):
         on_selected(psel[0], psel[1]['path'])
 
     if len(ps) == 0:
-        show_status_message("No projects found, did you add some .cabal file?", is_ok = False, priority = 5)
+        Common.show_status_message("No projects found, did you add a '.cabal' file?", is_ok=False, priority=5)
         return
     if len(ps) == 1:  # There's only one project, build it
         run_selected(ps[0])
         return
 
-    cabal_project_dir, cabal_project_name = get_cabal_project_dir_and_name_of_view(window.active_view())
+    cabal_project_dir, cabal_project_name = Common.get_cabal_project_dir_and_name_of_view(window.active_view())
     Logging.log('Current project: {0}'.format(cabal_project_name))
 
     # Sort by name
@@ -198,7 +198,7 @@ def run_build(view, project_name, project_dir, config):
     # names are of course possible, but unlikely, so we let them wait)
     if project_name in projects_being_built:
         Logging.log("Not building '%s' because it is already being built" % project_name, Logging.LOG_WARNING)
-        show_status_message('Already building %s' % project_name, is_ok = False, priority = 5)
+        Common.show_status_message('Already building %s' % project_name, is_ok = False, priority = 5)
         return
     # Set project as building
     projects_being_built.add(project_name)
@@ -221,7 +221,7 @@ def run_build(view, project_name, project_dir, config):
     # Assemble command lines to run (possibly multiple steps)
     commands = [[tool_name] + step for step in tool_steps]
 
-    Logging.log('running build commands: {0}'.format(commands), log_trace)
+    Logging.log('running build commands: {0}'.format(commands), Logging.LOG_TRACE)
 
     def done_callback():
         # Set project as done being built so that it can be built again
