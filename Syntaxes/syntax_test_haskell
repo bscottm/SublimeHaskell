@@ -112,7 +112,7 @@ data Type = Type Int deriving
 --          ^^^^ meta.data_declaration.haskell entity.name.constructor.haskell
 --               ^^^ storage.type.haskell support.type.haskell
 --                   ^^^^^^^^ meta.data_deriving.haskell keyword.other.haskell
-    (Eq, Show) -- deriving on following line
+    (Eq, Show)
 --  ^ meta.data_deriving.haskell keyword.operator.haskell
 --   ^^ storage.type.haskell support.type.haskell
 --     ^ meta.data_deriving.haskell meta.deriving.haskell punctuation.separator.comma.haskell
@@ -125,6 +125,16 @@ data Type' foo = Type foo deriving (Eq, Show)
 
 a = "asdf"
 b = 2
+c = 'T'
+
+f' :: Char -> Char
+f' = id
+
+d :: Char -> Char
+d = f' '5'  -- 5 here does not appear highlighted as a Char
+
+e = 4 `elem` [0..100]
+f = [1..105]
 
 ioFunc :: IO ()
 

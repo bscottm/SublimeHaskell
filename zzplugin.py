@@ -150,6 +150,8 @@ class SublimeHaskellEventListener(sublime_plugin.EventListener):
 
     def on_post_save(self, view):
         if not Common.view_is_inspected_source(view):
+            if Settings.COMPONENT_DEBUG.event_viewer:
+                print('{0} not inspected source.'.format(type(self).__name__ + ".on_post_save"))
             return
 
         if Settings.COMPONENT_DEBUG.event_viewer:
