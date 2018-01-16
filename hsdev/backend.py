@@ -498,14 +498,13 @@ class HsDevBackend(Backend.HaskellBackend):
     def complete(self, sym, file, wide=False, **backend_args):
         qname = sym.qualified_name() if sym.name is not None else sym.module + '.'
         if 'contents' in backend_args:
-            contents = backend_args['contents']
+            ## contents = backend_args['contents']
             del backend_args['contents']
         callbacks, backend_args = self.make_callbacks('complete', result_convert=ResultParse.parse_declarations, **backend_args)
         return self.list_command('complete',
                                  {'prefix': qname,
                                   'wide': wide,
-                                  'file': file,
-                                  'files': self.files_and_contents([file], contents)},
+                                  'file': file},
                                  callbacks, **backend_args)
 
     def hayoo(self, query, page=None, pages=None, **backend_args):
@@ -521,9 +520,12 @@ class HsDevBackend(Backend.HaskellBackend):
 
     def lint(self, files=None, contents=None, hlint=None, wait_complete=False, **backend_args):
         action = self.list_command if wait_complete else self.async_list_command
-        callbacks, backend_args = self.make_callbacks('lint', **backend_args)
-        callbacks.inject_result_convert(self.convert_warnings)
+        result_convert = backend_args.pop('result_convert', [])
+        if result_convert and not isinstance(result_convert, list):
+            result_convert = [result_convert]
+        result_convert.append(self.convert_warnings)
 
+        callbacks, backend_args = self.make_callbacks('lint', result_convert=result_convert, **backend_args)
         return action('lint', {'files': self.files_and_contents(files, contents),
                                'hlint-opts': hlint or []},
                       callbacks, **backend_args)
@@ -537,8 +539,12 @@ class HsDevBackend(Backend.HaskellBackend):
 
     def check_lint(self, files=None, contents=None, ghc=None, hlint=None, wait_complete=False, **backend_args):
         action = self.list_command if wait_complete else self.async_list_command
-        callbacks, backend_args = self.make_callbacks('check-lint', **backend_args)
-        callbacks.inject_result_convert(self.convert_warnings)
+        result_convert = backend_args.pop('result_convert', [])
+        if result_convert and not isinstance(result_convert, list):
+            result_convert = [result_convert]
+        result_convert.append(self.convert_warnings)
+
+        callbacks, backend_args = self.make_callbacks('check-lint', result_convert=result_convert, **backend_args)
         return action('check-lint', {'files': self.files_and_contents(files, contents),
                                      'ghc-opts': ghc or [],
                                      'hlint-opts': hlint or []},
@@ -558,7 +564,9 @@ class HsDevBackend(Backend.HaskellBackend):
         callbacks, backend_args = self.make_callbacks('flags', **backend_args)
         return self.command('flags', {}, callbacks, **backend_args)
 
-    def autofix_show(self, messages, wait_complete, **backend_args):
+    def autofix_show(self, messages, **backend_args):
+        wait_complete = backend_args.get('wait_complete', True)
+        backend_args.pop('wait_complete', None)
         action = self.list_command if wait_complete else self.async_list_command
         callbacks, backend_args = self.make_callbacks('autofix show', result_convert=ResultParse.parse_corrections,
                                                       **backend_args)
