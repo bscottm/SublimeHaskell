@@ -1,0 +1,14 @@
+-- SYNTAX TEST "Packages/SublimeHaskell/Syntaxes/Haskell-SublimeHaskell.sublime-syntax"
+
+module Test where
+
+class (--my comment
+-- ^^ source.haskell meta.declaration.class.haskell
+--     ^^^^^^^^^^^^ comment.line.double-dash comment.line.haskell
+       -- more comments
+--     ^^ meta.declaration.class.haskell meta.type_signature.brace.haskell comment.line.double-dash comment.line.haskell punctuation.comment.haskell
+       Monad m) => NewMonad m where
+--     ^^^^^ meta.declaration.class.haskell meta.type_signature.brace.haskell storage.type.haskell support.type.haskell
+--           ^ meta.declaration.class.haskell meta.type_signature.brace.haskell variable.generic.haskell
+--            ^ meta.declaration.class.haskell meta.type_signature.brace.haskell keyword.operator.haskell
+    foo :: String -> m String

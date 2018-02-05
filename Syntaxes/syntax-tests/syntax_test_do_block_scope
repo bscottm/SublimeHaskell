@@ -1,0 +1,9 @@
+-- SYNTAX TEST "Packages/SublimeHaskell/Syntaxes/Haskell-SublimeHaskell.sublime-syntax"
+module Test (test) where
+
+auxFun :: String -> IO ()
+auxFun s = do
+    print s
+
+test :: IO ()
+test = auxFun "???"

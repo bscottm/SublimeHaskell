@@ -1,0 +1,302 @@
+-- SYNTAX TEST "Packages/SublimeHaskell/Syntaxes/Haskell-SublimeHaskell.sublime-syntax"
+
+module Arrays (
+  -- Export list comment, because we like them
+  -- <- comment.line.double-dash
+  Type(..)
+, foobar
+) where
+
+import Data.List (sort, nub) -- import comment (PASS)
+
+-- Normal comment
+-- <- comment.line.double-dash
+--Normal comment missing space
+-- <- comment.line.double-dash
+
+{- Various data type definitions -}
+data SimpleThing = Foo | Bar Int | Baz | Quux
+-- ^ keyword.declaration.data.haskell
+--   ^^^^^^^^^^^ constant.other.haskell entity.name.class.haskell
+--               ^ keyword.operator.haskell
+--                 ^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--                     ^ keyword.operator.haskell
+--                           ^^^ storage.type.haskell support.type.haskell
+
+data MyMaybe x = MyMaybe | MyJust x
+-- ^ keyword.declaration.data.haskell
+--   ^^^^^^^ meta.declaration.data.haskell constant.other.haskell entity.name.class.haskell
+--           ^ meta.declaration.data.haskell variable.generic.haskell
+--               ^^^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--                       ^ keyword.operator.haskell
+--                         ^^^^^^ entity.name.constructor.haskell
+--                                ^ variable.generic.haskell
+
+data LongDataType = Foo_a | Bar_a |
+-- ^ keyword.declaration.data.haskell
+--   ^^^^^^^^^^^^ meta.declaration.data.haskell constant.other.haskell entity.name.class.haskell
+--                ^ meta.declaration.data.haskell keyword.operator.haskell
+--                  ^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--                        ^ keyword.operator.haskell
+--                          ^^^^^ entity.name.constructor.haskell
+--                                ^ keyword.operator.haskell
+  Quux | Llama x y z
+-- ^^^ entity.name.constructor.haskell
+--     ^ keyword.operator.haskell
+--       ^^^^^ entity.name.constructor.haskell
+--             ^ variable.generic.haskell
+--               ^ variable.generic.haskell
+--                 ^ variable.generic.haskell
+
+data TediouslyEnumerated = Foo_d
+-- ^ keyword.declaration.data.haskell
+--   ^^^^^^^^^^^^^^^^^^^ meta.declaration.data.haskell constant.other.haskell entity.name.class.haskell
+--                       ^ meta.declaration.data.haskell keyword.operator.haskell
+--                         ^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+    | Bar_d
+--  ^ keyword.operator.haskell
+--    ^^^^^ entity.name.constructor.haskell
+    | Quux_d a b c
+--  ^ keyword.operator.haskell
+--    ^^^^^^ entity.name.constructor.haskell
+--           ^ variable.generic.haskell
+--             ^ variable.generic.haskell
+--               ^ variable.generic.haskell
+
+data DerivedType = DerivedType Int deriving Show
+-- ^ meta.declaration.data.haskell keyword.declaration.data.haskell
+--   ^^^^^^^^^^^ meta.declaration.data.haskell constant.other.haskell entity.name.class.haskell
+--               ^ meta.declaration.data.haskell keyword.operator.haskell
+--                 ^^^^^^^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--                             ^^^ storage.type.haskell support.type.haskell
+--                                 ^^^^^^^^ keyword.other.haskell
+--                                          ^^^^ meta.data.declaration.deriving.haskell storage.type.haskell support.type.haskell
+
+
+data DerivedType' = DerivedType Int deriving
+-- ^ meta.declaration.data.haskell keyword.declaration.data.haskell
+--   ^^^^^^^^^^^^ meta.declaration.data.haskell constant.other.haskell entity.name.class.haskell
+--                ^ meta.declaration.data.haskell keyword.operator.haskell
+--                  ^^^^^^^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--                              ^^^ storage.type.haskell support.type.haskell
+--                                  ^^^^^^^^ keyword.other.haskell
+-- <- meta.declaration.data.haskell keyword.declaration.data.haskell
+  Show
+-- ^^^ meta.data.declaration.deriving.haskell storage.type.haskell support.type.haskell
+
+data DerivedType'' = DerivedType Int
+-- ^ meta.declaration.data.haskell keyword.declaration.data.haskell
+--   ^^^^^^^^^^^^ meta.declaration.data.haskell constant.other.haskell entity.name.class.haskell
+--                 ^ meta.declaration.data.haskell keyword.operator.haskell
+--                   ^^^^^^^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--                               ^^^ storage.type.haskell support.type.haskell
+  deriving Show
+-- ^^^^^^^ meta.data.declaration.deriving.haskell keyword.other.haskell keyword.declaration.data.deriving.haskell
+--         ^^^^ meta.data.declaration.deriving.haskell storage.type.haskell support.type.haskell
+
+data Type = Type Int deriving
+-- ^ meta.declaration.data.haskell keyword.declaration.data.haskell
+--   ^^^^ meta.declaration.data.haskell constant.other.haskell entity.name.class.haskell
+--        ^ meta.declaration.data.haskell keyword.operator.haskell
+--          ^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--               ^^^ storage.type.haskell support.type.haskell
+--                   ^^^^^^^^ meta.data.declaration.deriving.haskell keyword.declaration.data.deriving.haskell
+    (Eq, Show) -- deriving on following line
+--  ^ meta.data.declaration.deriving.haskell keyword.operator.haskell
+--   ^^ meta.data.declaration.deriving.haskell storage.type.haskell support.class.haskell
+--     ^ meta.data.declaration.deriving.haskell keyword.operator.haskell
+--       ^^^^ meta.data.declaration.deriving.haskell storage.type.haskell support.class.haskell
+--           ^ meta.data.declaration.deriving.haskell keyword.operator.haskell
+--             ^^ meta.data.declaration.deriving.haskell comment.line.double-dash comment.line.haskell
+
+data Type' foo = Type foo deriving (Eq, Show)
+
+data (Monad m) => Constrained m = Constrained m deriving (Eq, Show)
+
+data TreeType a =
+  Branch (TreeType left) (TreeType right) |
+  Leaf x
+
+a = "asdf"
+b = 2
+
+ioFunc :: IO ()
+ioFunc' :: IO ()
+
+newtype Fribbles x = Fribbles x
+
+class Myclass a
+  -- Class before where comment
+  -- <- comment.line.double-dash
+  where MyClass :: {
+    _f1 :: Int
+  , _f2 :: String
+  }
+
+class Myclass' a
+  -- Class before where comment
+  -- <- comment.line.double-dash
+  where MyClass' :: {
+    _f1 :: Int
+  , _f2 :: String
+  , _f3 :: IO foobats
+  }
+
+myFunction1
+  :: Int -- Type signature on next line
+  -> String
+myFunction1 = undefined
+
+myFunction2 :: Int -> String -- Type signature
+myFunction2 = undefined
+
+myFunction2' :: Int → String
+myFunction2' = undefined
+
+myFunction2a :: Fribbles a -> ()
+myFunction2a a = undefined
+
+myFunction2b :: (Myclass a) => Fribbles a -> ()
+myFunction2b a = undefined
+
+myFunction3 :: Int            -- Multiline type signature (PASS)
+            -> String
+myFunction3 = undefined
+
+myFunction4 :: (Myclass a) => -- Multiline type signature w/constraint (PASS)
+               Fribbles a
+            -> String
+myFunction4 _v =
+  let
+      animaniac = 0
+  in  show animaniac
+
+mymodule -- function containing "module" (PASS)
+  = undefined
+
+myimport -- function containing "import" (PASS)
+  = undefined
+
+
+c = 1
+
+-- Multi-line strings
+x = "this is my\
+    \a\
+    \string"
+    -- The `\a` should not be highlighted (PASS)
+
+
+class Foo a where
+  foo :: Int -> a
+
+instance Foo Int where
+  foo 2 = 3
+  foo _ = 4
+
+class (Eq a) => Bar a where
+  fob :: Int -> a
+
+
+keys'Mb -- should not detect `Mb` as a constructor ("constant") (PASS)
+  = undefined
+
+data D where{A :: Int -> D; B :: D } -- A should be highlighted (PASS)
+
+
+{- Multiline block comment.
+
+   Last line has an -- inline comment indicator -}
+
+data MyCTor = MyCtor
+
+
+-- The following things shouldn't be comments but operators:
+_ --! _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --# _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --$ _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --% _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --& _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --* _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --+ _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --. _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --/ _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --< _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --= _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --> _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --? _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --@ _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --\ _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --^ _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --| _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --~ _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+_ --: _ = undefined
+--  ^ keyword.operator.haskell
+_ --⋆ _ = undefined
+--  ^ meta.definition.function.haskell entity.name.function.haskell
+
+
+-- The following should be comments:
+-- <- comment.line.double-dash
+-- a
+-- <- comment.line.double-dash
+
+guarded_func x
+  | x == 0
+  = True
+  | x < 0
+  = False
+  | otherwise
+  = False
+
+
+data LongDataType' = Foo_b | Bar_b |
+-- ^ meta.declaration.data.haskell keyword.declaration.data.haskell
+--   ^^^^^^^^^^^^^ meta.declaration.data.haskell constant.other.haskell entity.name.class.haskell
+--                 ^ meta.declaration.data.haskell keyword.operator.haskell
+--                   ^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--                         ^ keyword.operator.haskell
+--                           ^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--                                 ^ keyword.operator.haskell
+  Quux_b l m  n | Lemma_b
+-- ^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--       ^ variable.generic.haskell
+--         ^ variable.generic.haskell
+--            ^ variable.generic.haskell
+--              ^ keyword.operator.haskell
+--                ^^^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+
+data LongDataType'' = Foo_c | Bar_c |
+-- ^ meta.declaration.data.haskell keyword.declaration.data.haskell
+--   ^^^^^^^^^^^^^^ meta.declaration.data.haskell constant.other.haskell entity.name.class.haskell
+--                  ^ meta.declaration.data.haskell keyword.operator.haskell
+--                    ^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--                          ^ keyword.operator.haskell
+--                            ^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--                                  ^ keyword.operator.haskell
+  Quux_c String | Lemma_c derived | Kragon
+-- ^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--       ^^^^^^ meta.declaration.data.haskell storage.type.haskell support.type.haskell
+--              ^ keyword.operator.haskell
+--                ^^^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
+--                        ^^^^^^^ variable.generic.haskell
+--                                ^ keyword.operator.haskell
+--                                  ^^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell

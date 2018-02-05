@@ -57,6 +57,22 @@
             }
         },
         {
+            "name": "Single line documentation comment",
+            "scope": "comment.line.documentation",
+            "settings": {
+                "fontStyle": "italic",
+                "foreground": "#7f7f7f"
+            }
+        },
+        {
+            "name": "Block documentation comment",
+            "scope": "comment.block.documentation",
+            "settings": {
+                "fontStyle": "italic",
+                "foreground": "#7f7f7f"
+            }
+        },
+        {
             "name": "Pragma",
             "scope": "pragma",
             "settings": {
@@ -331,7 +347,7 @@
             "scope": "variable.parameter",
             "settings": {
                 "fontStyle": "italic",
-                "foreground": ""
+                "foreground": "#5F7FBF"
             }
         },
         {
