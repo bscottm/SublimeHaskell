@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 
+import functools
 import os
 import os.path
 import re
@@ -159,7 +160,7 @@ class MarkerManager(object):
             cabal_proj_dir = Common.get_cabal_project_dir_of_file(filename) or os.path.dirname(filename)
             show_panel = not fly_mode and self.messages
             output_text = self.format_output_messages()
-            sublime.set_timeout(lambda: self.make_message_panel(view, output_text, cabal_proj_dir, show_panel), 0)
+            sublime.set_timeout(functools.partial(self.make_message_panel, view, output_text, cabal_proj_dir, show_panel), 0)
 
         sublime.set_timeout(self.update_markers_across_views, 0)
 
@@ -169,7 +170,10 @@ class MarkerManager(object):
         '''
 
         def to_error(errmsg):
-            filename, line, column, messy_details = errmsg.groups()
+            filename = errmsg.group('filename')
+            line = errmsg.group('line')
+            column = errmsg.group('col')
+            messy_details = errmsg.group('details')
             filename = os.path.normpath(os.path.join(base_dir, filename))
             line, column = int(line), int(column)
 
@@ -196,7 +200,7 @@ class MarkerManager(object):
             output_text += '\n\nAdditional output:\n------------------\n' + unparsed
 
         if Settings.PLUGIN.show_error_window and self.messages:
-            sublime.set_timeout(lambda: self.make_message_panel(view, output_text, base_dir, True), 0)
+            sublime.set_timeout(functools.partial(self.make_message_panel, view, output_text, base_dir, True), 0)
 
         sublime.set_timeout(self.update_markers_across_views, 0)
 
@@ -214,7 +218,7 @@ class MarkerManager(object):
         def messages_level(name, level):
             if summary[level]:
                 count = '{0}: {1}'.format(name, summary[level])
-                msgs = '\n'.join([str(m) for m in self.messages if m.level == level])
+                msgs = '\n'.join([str(m) + '\n' for m in self.messages if m.level == level])
                 return '{0}\n\n{1}'.format(count, msgs)
 
             return ''
@@ -308,7 +312,7 @@ class MarkerManager(object):
                          'begin': err_rgn.begin(),
                          'end': err_rgn.end()}
 
-            sublime.set_timeout(lambda: view.run_command('sublime_haskell_replace_text', repl_text), 0)
+            view.run_command('sublime_haskell_replace_text', repl_text)
 
 
     def make_message_panel(self, view, text, cabal_project_dir, panel_out):
@@ -332,7 +336,7 @@ def goto_error(view, mark):
     line = mark.region.start.line + 1
     column = mark.region.start.column + 1
 
-    show_output(view)
+    Common.show_panel(view.window(), OUTPUT_PANEL_NAME)
     msg_panel = MARKER_MANAGER.message_panel
     # error_region = msg_panel.find('{0}: line {1}, column \\d+:(\\n\\s+.*)*'.format(re.escape(mark.filename), line), 0)
     error_region = msg_panel.find(re.escape(str(mark)), 0)
@@ -381,15 +385,6 @@ class SublimeHaskellPreviousError(CommandWin.SublimeHaskellTextCommand):
             self.view.sel().clear()
             self.view.sel().add(prev_err.region.to_region(self.view))
             goto_error(self.view, prev_err)
-
-
-def hide_output(view, panel_name=OUTPUT_PANEL_NAME):
-    view.window().run_command('hide_panel', {'panel': 'output.' + panel_name})
-
-
-def show_output(view, panel_name=OUTPUT_PANEL_NAME):
-    ## view.set_read_only(True)
-    view.window().run_command('show_panel', {'panel': 'output.' + panel_name})
 
 
 def tabs_offset(view, point):

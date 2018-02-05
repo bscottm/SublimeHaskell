@@ -239,10 +239,6 @@ def output_error(window, text):
     output_panel(window, text, panel_name=ERROR_PANEL_NAME)
 
 
-def output_error_async(window, text):
-    sublime.set_timeout(lambda: output_error(window, text), 0)
-
-
 def get_line_contents(view, location):
     """
     Returns contents of line at the given location.
@@ -537,7 +533,7 @@ def settings_has_cabal_source(settings):
 
 HASKELL_SYNTAXES = ["Haskell.tmLanguage",
                     "Haskell.sublime-syntax",
-                    'Haskell-SublimeHaskell.tmLanguage']
+                    'Haskell-SublimeHaskell.sublime-syntax']
 
 
 def view_is_haskell_source(view):
