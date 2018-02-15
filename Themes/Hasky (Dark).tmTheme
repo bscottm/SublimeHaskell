@@ -1,18 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!--
-======================================================================
-Hasky (Dark) by voidex
-======================================================================
-Based on Peacock
-======================================================================
-A Sublime Text 2 / Textmate theme.
-Copyright (c) 2014 Dayle Rees.
-Released under the MIT License <http://opensource.org/licenses/MIT>
-======================================================================
-Find more themes at : https://github.com/daylerees/colour-schemes
-======================================================================
--->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>name</key>
@@ -22,10 +9,24 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 		<dict>
 			<key>settings</key>
 			<dict>
+				<key>activeGuide</key>
+				<string>#9d550fb0</string>
 				<key>background</key>
 				<string>#2b2a27</string>
+				<key>bracketContentsForeground</key>
+				<string>#BF472F</string>
+				<key>bracketContentsOptions</key>
+				<string>underline</string>
+				<key>bracketsForeground</key>
+				<string>#5FBFBF</string>
+				<key>bracketsOptions</key>
+				<string>underline</string>
 				<key>caret</key>
 				<string>#f8f8f0</string>
+				<key>findHighlight</key>
+				<string>#ffe792</string>
+				<key>findHighlightForeground</key>
+				<string>#000000</string>
 				<key>foreground</key>
 				<string>#ede0ce</string>
 				<key>invisibles</key>
@@ -34,32 +35,14 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#403c37</string>
 				<key>selection</key>
 				<string>#BF472F</string>
-				<key>selectionForeground</key>
-				<string>#ffffff</string>
-				<key>findHighlight</key>
-				<string>#ffe792</string>
-				<key>findHighlightForeground</key>
-				<string>#000000</string>
 				<key>selectionBorder</key>
 				<string>#222218</string>
-				<key>activeGuide</key>
-				<string>#9d550fb0</string>
-
-				<key>bracketsForeground</key>
-				<string>#5FBFBF</string>
-				<key>bracketsOptions</key>
-				<string>underline</string>
-
-				<key>bracketContentsForeground</key>
-				<string>#BF472F</string>
-				<key>bracketContentsOptions</key>
-				<string>underline</string>
-
+				<key>selectionForeground</key>
+				<string>#ffffff</string>
 				<key>tagsOptions</key>
 				<string>stippled_underline</string>
 			</dict>
 		</dict>
-		<!-- Errors -->
 		<dict>
 			<key>name</key>
 			<string>Mark error</string>
@@ -93,7 +76,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#91dc5a</string>
 			</dict>
 		</dict>
-		<!-- Haskell -->
 		<dict>
 			<key>name</key>
 			<string>Comment</string>
@@ -112,6 +94,32 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 			<string>punctuation.comment</string>
 			<key>settings</key>
 			<dict>
+				<key>foreground</key>
+				<string>#7f7f7f</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Single line documentation comment</string>
+			<key>scope</key>
+			<string>comment.line.documentation</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>italic</string>
+				<key>foreground</key>
+				<string>#7f7f7f</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Block documentation comment</string>
+			<key>scope</key>
+			<string>comment.block.documentation</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>italic</string>
 				<key>foreground</key>
 				<string>#7f7f7f</string>
 			</dict>
@@ -448,7 +456,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#BCBC5E</string>
 			</dict>
 		</dict>
-		<!-- Haskell end -->
 		<dict>
 			<key>name</key>
 			<string>String</string>
@@ -460,7 +467,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#BFBF2F</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>Built-in constant</string>
@@ -554,7 +560,7 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<key>fontStyle</key>
 				<string>italic</string>
 				<key>foreground</key>
-				<string></string>
+				<string>#5FBFBF</string>
 			</dict>
 		</dict>
 		<dict>
@@ -659,7 +665,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#A7BF2F</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>diff.header</string>
@@ -704,7 +709,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#E6DB74</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>scope</key>
 			<string>constant.numeric.line-number.find-in-files - match</string>
@@ -790,10 +794,10 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 			<string>meta.use support.class.builtin, meta.other.inherited-class support.class.builtin</string>
 			<key>settings</key>
 			<dict>
-				<key>foreground</key>
-				<string>#ede0ce</string>
 				<key>fontStyle</key>
 				<string>normal</string>
+				<key>foreground</key>
+				<string>#ede0ce</string>
 			</dict>
 		</dict>
 		<dict>
@@ -803,10 +807,10 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 			<string>variable.other</string>
 			<key>settings</key>
 			<dict>
-				<key>foreground</key>
-				<string></string>
 				<key>fontStyle</key>
 				<string>normal</string>
+				<key>foreground</key>
+				<string></string>
 			</dict>
 		</dict>
 		<dict>
@@ -816,14 +820,12 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 			<string>variable.parameter.function.coffee</string>
 			<key>settings</key>
 			<dict>
-				<key>foreground</key>
-				<string>#A7BF2F</string>
 				<key>fontStyle</key>
 				<string>italic</string>
+				<key>foreground</key>
+				<string>#A7BF2F</string>
 			</dict>
 		</dict>
-
-		<!-- Markdown support. -->
 		<dict>
 			<key>name</key>
 			<string>Markdown Titles</string>
@@ -835,7 +837,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#BF472F</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>Markdown Title Hash</string>
@@ -847,7 +848,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#26A6A6</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>Markdown Raw</string>
@@ -859,7 +859,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#A7BF2F</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>Markdown bold stars</string>
@@ -871,7 +870,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#26A6A6</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>Markdown link title braces</string>
@@ -883,7 +881,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#26A6A6</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>Markdown link braces</string>
@@ -895,7 +892,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#26A6A6</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>Markdown link</string>
@@ -903,13 +899,12 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 			<string>markup.underline.link.markdown, markup.underline.link.image.markdown, meta.image.inline.markdown</string>
 			<key>settings</key>
 			<dict>
-				<key>foreground</key>
-				<string>#5FBFBF</string>
 				<key>fontStyle</key>
 				<string>italic</string>
+				<key>foreground</key>
+				<string>#5FBFBF</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>Markdown bold/italic</string>
@@ -921,7 +916,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#5FBFBF</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>Markdown bold/italic</string>
@@ -933,7 +927,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>italic</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>Markdown bold/italic</string>
@@ -945,7 +938,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>bold</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>Markdown pre</string>
@@ -957,7 +949,6 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 				<string>#00a8c6</string>
 			</dict>
 		</dict>
-
 		<dict>
 			<key>name</key>
 			<string>GitGutter deleted</string>
@@ -1007,4 +998,3 @@ Find more themes at : https://github.com/daylerees/colour-schemes
 	<string>9390e510-7f08-11e4-b4a9-0800200c9a66</string>
 </dict>
 </plist>
-

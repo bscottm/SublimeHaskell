@@ -142,7 +142,7 @@ settings:
   settings: {fontStyle: italic underline, foreground: '#BF472F'}
 - name: Function argument
   scope: variable.parameter
-  settings: {fontStyle: italic, foreground: ''}
+  settings: {fontStyle: italic, foreground: '#5FBFBF'}
 - name: Tag name
   scope: entity.name.tag
   settings: {fontStyle: '', foreground: '#5FBFBF'}

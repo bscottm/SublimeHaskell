@@ -70,7 +70,7 @@ data DerivedType = DerivedType Int deriving Show
 --                 ^^^^^^^^^^^ meta.declaration.data.haskell entity.name.constructor.haskell
 --                             ^^^ storage.type.haskell support.type.haskell
 --                                 ^^^^^^^^ keyword.other.haskell
---                                          ^^^^ meta.data.declaration.deriving.haskell storage.type.haskell support.type.haskell
+--                                          ^^^^ meta.declaraction.data.deriving storage.type.haskell support.type.haskell
 
 
 data DerivedType' = DerivedType Int deriving
@@ -82,7 +82,7 @@ data DerivedType' = DerivedType Int deriving
 --                                  ^^^^^^^^ keyword.other.haskell
 -- <- meta.declaration.data.haskell keyword.declaration.data.haskell
   Show
--- ^^^ meta.data.declaration.deriving.haskell storage.type.haskell support.type.haskell
+-- ^^^ meta.declaraction.data.deriving storage.type.haskell support.type.haskell
 
 data DerivedType'' = DerivedType Int
 -- ^ meta.declaration.data.haskell keyword.declaration.data.haskell
@@ -113,9 +113,9 @@ data Type' foo = Type foo deriving (Eq, Show)
 
 data (Monad m) => Constrained m = Constrained m deriving (Eq, Show)
 
-data TreeType a =
-  Branch (TreeType left) (TreeType right) |
-  Leaf x
+data Tree a =
+  Branch (Tree a) (Tree a) |
+  Leaf a
 
 a = "asdf"
 b = 2
