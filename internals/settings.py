@@ -89,11 +89,11 @@ class SettingsContainer(object):
         self._enable_hdocs = False
         self._ghc_opts = []
         self._ghci_opts = []
-        self._haskell_build_tool = 'stack'
+        self._haskell_build_tool = 'cabal-new-build'
         self._hindent_options = []
         self._hsdev_log_config = 'use silent'
         self._hsdev_log_level = 'warning'
-        self._inspect_modules = True
+        self._inspect_modules = False
         self._lint_check_fly = False
         self._lint_check_fly_idle = 5
         self._lint_opts = []

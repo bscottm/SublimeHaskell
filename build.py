@@ -90,7 +90,7 @@ class Builder(object):
             'message': 'Configuring',
             'steps': {
                 'cabal':           [['configure', '--enable-tests']],
-                'cabal-new-build': [['new-configure', '--enable-tests']],
+                'cabal-new-build': [['v2-configure', '--enable-tests']],
                 'stack':           []
             }
         },
@@ -98,7 +98,7 @@ class Builder(object):
             'message': 'Building',
             'steps': {
                 'cabal':           [['build']],
-                'cabal-new-build': [['new-build']],
+                'cabal-new-build': [['v2-build']],
                 'stack':           [['build']]
             }
         },
@@ -106,7 +106,7 @@ class Builder(object):
             'message': 'Checking',
             'steps': {
                 'cabal':           [['build', '--ghc-options=-c']],
-                'cabal-new-build': [['new-build', '--ghc-options=-c']],
+                'cabal-new-build': [['v2-build', '--ghc-options=-c']],
                 'stack':           [['build', '--ghc-options=-c']]
             }
         },
@@ -118,8 +118,8 @@ class Builder(object):
             'steps': {
                 'cabal':           [['build'],
                                     ['build', '-v0', '--ghc-options=-fforce-recomp -fno-code']],
-                'cabal-new-build': [['new-build'],
-                                    ['new-build', '-v0', '--ghc-options=-fforce-recomp -fno-code']],
+                'cabal-new-build': [['v2-build'],
+                                    ['v2-build', '-v0', '--ghc-options=-fforce-recomp -fno-code']],
                 'stack':           [['build']]
             }
         },
@@ -128,8 +128,8 @@ class Builder(object):
             'steps': {
                 'cabal':           [['build', '--ghc-options=-c'],
                                     ['build', '-v0', '--ghc-options=-fforce-recomp -fno-code']],
-                'cabal-new-build': [['new-build', '--ghc-options=-c'],
-                                    ['new-build', '-v0', '--ghc-options=-fforce-recomp -fno-code']],
+                'cabal-new-build': [['v2-build', '--ghc-options=-c'],
+                                    ['v2-build', '-v0', '--ghc-options=-fforce-recomp -fno-code']],
                 'stack':           [['build']]
             }
         },
@@ -141,8 +141,8 @@ class Builder(object):
                                     ['configure', '--enable-tests'],
                                     ['build']],
                 'cabal-new-build': [cabal_new_clean,
-                                    ['new-configure', '--enable-tests'],
-                                    ['new-build']],
+                                    ['v2-configure', '--enable-tests'],
+                                    ['v2-build']],
                 'stack':           [['clean'],
                                     ['build']]
             }
@@ -174,7 +174,7 @@ class Builder(object):
             'message': 'Execute benchmarks',
             'steps': {
                 'cabal':            [['bench']],
-                'cabal-new-build':  [['new-bench']],
+                'cabal-new-build':  [['v2-bench']],
                 'stack':            [['bench']]
             }
         }

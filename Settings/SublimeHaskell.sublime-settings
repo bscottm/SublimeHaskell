@@ -20,10 +20,10 @@
     "haskell_build_tool": "stack",
 
     // Enable auto check on save
-    "enable_auto_check": true,
+    "enable_auto_check": false,
 
     // Enable auto lint on save (as hints when building)
-    "enable_auto_lint": true,
+    "enable_auto_lint": false,
 
     // Show only: Limit what compiler or backend messages get marked or displayed
     "show_only": {
@@ -65,7 +65,7 @@
     //
     // This can be a project-specific setting (see per-project settings at the end
     // of this document.)
-    "auto_build_mode": "normal-then-warnings",
+    "auto_build_mode": "normal",
 
     // Use the improved/alternate Haskell syntax?
     //
@@ -159,7 +159,7 @@
 
     "backends": {
         "Local hsdev": {
-            "default": true,
+            "default": false,
             "backend": "hsdev",
             "options": {
               "local": true,
@@ -221,7 +221,7 @@
             }
         },
         "No backend": {
-            "default": false,
+            "default": true,
             "backend": "none"
         }
     },
